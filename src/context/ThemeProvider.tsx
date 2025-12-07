@@ -92,24 +92,19 @@ export function ThemeProvider({
   enableSystem = true,
   disableTransitionOnChange = false,
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // SSR: use default, will be corrected on hydration
-    return defaultTheme;
-  });
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    return resolveTheme(defaultTheme, enableSystem);
-  });
+  // SSR-safe: Always start with "light" to match server, then hydrate
+  const [theme, setThemeState] = useState<Theme>(defaultTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize theme from storage on mount
+  // Initialize theme from storage on mount (client-side only)
   useEffect(() => {
     const stored = getStoredTheme(storageKey);
-    if (stored) {
-      setThemeState(stored);
-      setResolvedTheme(resolveTheme(stored, enableSystem));
-    }
+    const currentTheme = stored || defaultTheme;
+    setThemeState(currentTheme);
+    setResolvedTheme(resolveTheme(currentTheme, enableSystem));
     setIsLoading(false);
-  }, [storageKey, enableSystem]);
+  }, [storageKey, enableSystem, defaultTheme]);
 
   // Apply theme to document
   useEffect(() => {
