@@ -230,7 +230,9 @@ export default function ComponentsPage() {
               <Button variant="success" leftIcon={<Check className="h-4 w-4" />}>
                 Success
               </Button>
-              <Button variant="warning">Warning</Button>
+              <Button clickEffect="ripple" hoverEffect="magnetic" variant="warning">
+                Warning
+              </Button>
               <Button variant="outline">Outline</Button>
               <Button variant="ghost">Ghost</Button>
               <Button variant="link">Link</Button>
@@ -312,7 +314,7 @@ export default function ComponentsPage() {
                   label="Default Input"
                   placeholder="Enter text..."
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
                 />
                 <Input label="Filled Variant" variant="filled" placeholder="Filled style" />
                 <Input label="Flushed Variant" variant="flushed" placeholder="Flushed style" />
@@ -325,7 +327,7 @@ export default function ComponentsPage() {
                   label="Clearable"
                   placeholder="Type something..."
                   value={clearableValue}
-                  onChange={(e) => setClearableValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setClearableValue(e.target.value)}
                   clearable
                   onClear={() => setClearableValue("")}
                   helperText="Click the X button to clear"
@@ -468,17 +470,18 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Cards"
-          description="Flexible card components with hover animations and multiple variants."
+          description="Flexible card components with hover animations, glass morphism, 3D tilt, spotlight effects, and multiple variants."
         >
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card animated hoverLift={8}>
+            {/* Glass morphism card */}
+            <Card variant="glass" animated spotlight>
               <CardHeader>
-                <CardTitle>Lift Effect</CardTitle>
-                <CardDescription>Hover to see the lift animation</CardDescription>
+                <CardTitle>Glass Morphism</CardTitle>
+                <CardDescription>Frosted glass with spotlight</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  This card lifts up smoothly when you hover over it.
+                  Beautiful frosted glass effect with mouse-tracking spotlight.
                 </p>
               </CardContent>
               <CardFooter>
@@ -488,14 +491,15 @@ export default function ComponentsPage() {
               </CardFooter>
             </Card>
 
-            <Card animated hoverScale={1.03} variant="elevated">
+            {/* 3D Tilt card */}
+            <Card tilt tiltIntensity={15} glow variant="elevated">
               <CardHeader>
-                <CardTitle>Scale Effect</CardTitle>
-                <CardDescription>With elevated shadow</CardDescription>
+                <CardTitle>3D Tilt Effect</CardTitle>
+                <CardDescription>Move your mouse around</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Watch the subtle scale effect when you hover over this card.
+                  This card tilts in 3D space following your cursor with glow effect.
                 </p>
               </CardContent>
               <CardFooter>
@@ -503,14 +507,15 @@ export default function ComponentsPage() {
               </CardFooter>
             </Card>
 
-            <Card animated hoverScale={1.02} hoverLift={4} variant="filled">
+            {/* Gradient border card */}
+            <Card variant="gradient">
               <CardHeader>
-                <CardTitle>Combined Effect</CardTitle>
-                <CardDescription>Scale + Lift together</CardDescription>
+                <CardTitle>Gradient Border</CardTitle>
+                <CardDescription>Animated gradient edge</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  This card scales up and lifts on hover for emphasis.
+                  Eye-catching gradient border that wraps around the card.
                 </p>
               </CardContent>
               <CardFooter>
@@ -518,6 +523,38 @@ export default function ComponentsPage() {
               </CardFooter>
             </Card>
 
+            {/* Combined effects card */}
+            <Card animated tilt spotlight hoverLift={12} variant="default">
+              <CardHeader>
+                <CardTitle>All Effects Combined</CardTitle>
+                <CardDescription>Tilt + Spotlight + Lift</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Experience all effects working together harmoniously.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button size="sm" variant="ghost">
+                  Explore
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Glow effect card */}
+            <Card glow glowColor="rgba(147, 51, 234, 0.5)" animated variant="filled">
+              <CardHeader>
+                <CardTitle>Custom Glow</CardTitle>
+                <CardDescription>Purple glow on hover</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Cards can have custom colored glow effects on hover.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Simple variants */}
             <Card variant="outline">
               <CardHeader>
                 <CardTitle>Outline Variant</CardTitle>
@@ -525,28 +562,6 @@ export default function ComponentsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">A clean, minimal card with just an outline.</p>
-              </CardContent>
-            </Card>
-
-            <Card variant="ghost">
-              <CardHeader>
-                <CardTitle>Ghost Variant</CardTitle>
-                <CardDescription>Subtle hover background</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">No border, reveals on hover.</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-linear-to-br from-primary/10 to-accent/10">
-              <CardHeader>
-                <CardTitle>Custom Gradient</CardTitle>
-                <CardDescription>With custom className</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Cards can be customized with any Tailwind classes.
-                </p>
               </CardContent>
             </Card>
           </div>

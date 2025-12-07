@@ -9,6 +9,9 @@ This project is a custom component collection for Next.js using TailwindCSS v4, 
 - Always commit after as task is done.
 - Always communicate with nextjs dev tool mcp server for continuous checks if anything is wrong.
 - NEVER get to the conclusion that its external issue and not your code. Always double check your code first.
+- Always complete all todo you have. don't stop and ask for confirmation.
+- Never run the dev server. Just assume its already running. if you need terminal output or any logs just use `next-devtools` mcp server to get them.
+- Always write type safe typescript code.
 
 
 ---

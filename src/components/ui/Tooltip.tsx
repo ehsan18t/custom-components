@@ -12,6 +12,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -26,10 +27,11 @@ import { cn } from "@/lib/utils";
 
 export const tooltipVariants = tv({
   base: [
-    "absolute z-50 px-2 py-1",
-    "rounded-md bg-popover text-popover-foreground",
-    "text-xs font-medium shadow-md border border-border",
-    "pointer-events-none",
+    "absolute z-50 px-3 py-1.5",
+    "rounded-lg bg-foreground text-background",
+    "text-xs font-medium shadow-lg",
+    "pointer-events-none select-none",
+    "max-w-xs",
   ],
   variants: {
     side: {
@@ -63,6 +65,8 @@ export interface TooltipProps
   showArrow?: boolean;
   /** Render tooltip in a portal to prevent clipping */
   usePortal?: boolean;
+  /** Offset from trigger element in pixels */
+  offset?: number;
 }
 
 // ============================================================================
@@ -75,11 +79,12 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       className,
       side = "top",
       content,
-      delay = 300,
-      animationDuration = 0.15,
+      delay = 200,
+      animationDuration = 0.2,
       disabled = false,
       showArrow = true,
       usePortal = false,
+      offset = 8,
       children,
       ...props
     },
@@ -88,7 +93,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
     const [isVisible, setIsVisible] = useState(false);
     const [isRendered, setIsRendered] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState({ top: 0, left: 0, actualSide: side });
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,38 +105,88 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       setIsMounted(true);
     }, []);
 
-    // Calculate tooltip position when using portal
+    // Calculate tooltip position with collision detection
     const updatePosition = useCallback(() => {
-      if (!containerRef.current || !usePortal) return;
+      if (!containerRef.current || !tooltipRef.current) return;
 
-      const rect = containerRef.current.getBoundingClientRect();
+      const triggerRect = containerRef.current.getBoundingClientRect();
+      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       const scrollX = window.scrollX;
       const scrollY = window.scrollY;
+
+      // Check if tooltip fits in preferred position, otherwise flip
+      let actualSide = side;
+      const padding = 10; // Viewport edge padding
+
+      if (side === "top" && triggerRect.top - tooltipRect.height - offset < padding) {
+        actualSide = "bottom";
+      } else if (
+        side === "bottom" &&
+        triggerRect.bottom + tooltipRect.height + offset > viewportHeight - padding
+      ) {
+        actualSide = "top";
+      } else if (side === "left" && triggerRect.left - tooltipRect.width - offset < padding) {
+        actualSide = "right";
+      } else if (
+        side === "right" &&
+        triggerRect.right + tooltipRect.width + offset > viewportWidth - padding
+      ) {
+        actualSide = "left";
+      }
 
       let top = 0;
       let left = 0;
 
-      switch (side) {
+      switch (actualSide) {
         case "top":
-          top = rect.top + scrollY;
-          left = rect.left + scrollX + rect.width / 2;
+          top = triggerRect.top + scrollY - tooltipRect.height - offset;
+          left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
           break;
         case "bottom":
-          top = rect.bottom + scrollY;
-          left = rect.left + scrollX + rect.width / 2;
+          top = triggerRect.bottom + scrollY + offset;
+          left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
           break;
         case "left":
-          top = rect.top + scrollY + rect.height / 2;
-          left = rect.left + scrollX;
+          top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
+          left = triggerRect.left + scrollX - tooltipRect.width - offset;
           break;
         case "right":
-          top = rect.top + scrollY + rect.height / 2;
-          left = rect.right + scrollX;
+          top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
+          left = triggerRect.right + scrollX + offset;
           break;
       }
 
-      setTooltipPosition({ top, left });
-    }, [side, usePortal]);
+      // Clamp horizontal position to viewport
+      const minLeft = scrollX + padding;
+      const maxLeft = scrollX + viewportWidth - tooltipRect.width - padding;
+      left = Math.max(minLeft, Math.min(maxLeft, left));
+
+      // Clamp vertical position to viewport
+      const minTop = scrollY + padding;
+      const maxTop = scrollY + viewportHeight - tooltipRect.height - padding;
+      top = Math.max(minTop, Math.min(maxTop, top));
+
+      setPosition({ top, left, actualSide });
+    }, [side, offset]);
+
+    // Update position on scroll/resize when visible
+    useEffect(() => {
+      if (!isVisible || !usePortal) return;
+
+      const handleUpdate = () => {
+        requestAnimationFrame(updatePosition);
+      };
+
+      window.addEventListener("scroll", handleUpdate, true);
+      window.addEventListener("resize", handleUpdate);
+
+      return () => {
+        window.removeEventListener("scroll", handleUpdate, true);
+        window.removeEventListener("resize", handleUpdate);
+      };
+    }, [isVisible, usePortal, updatePosition]);
 
     // Handle mouse enter
     const handleMouseEnter = () => {
@@ -139,7 +194,6 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       timeoutRef.current = setTimeout(() => {
         setIsRendered(true);
         setIsVisible(true);
-        updatePosition();
       }, delay);
     };
 
@@ -160,6 +214,13 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       };
     }, []);
 
+    // Update position after tooltip is rendered (for portal mode)
+    useLayoutEffect(() => {
+      if (isRendered && isVisible && usePortal) {
+        updatePosition();
+      }
+    }, [isRendered, isVisible, usePortal, updatePosition]);
+
     // Handle unmount after animation
     useEffect(() => {
       if (!isVisible && isRendered) {
@@ -176,74 +237,67 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       () => {
         if (!tooltipRef.current || prefersReducedMotion) return;
 
+        const getTransformOrigin = () => {
+          const s = usePortal ? position.actualSide : side;
+          switch (s) {
+            case "top":
+              return "bottom center";
+            case "bottom":
+              return "top center";
+            case "left":
+              return "right center";
+            case "right":
+              return "left center";
+            default:
+              return "bottom center";
+          }
+        };
+
         if (isVisible) {
+          gsap.set(tooltipRef.current, { transformOrigin: getTransformOrigin() });
           gsap.fromTo(
             tooltipRef.current,
-            { opacity: 0, scale: 0.9 },
+            {
+              opacity: 0,
+              scale: 0.92,
+              y: side === "top" ? 4 : side === "bottom" ? -4 : 0,
+              x: side === "left" ? 4 : side === "right" ? -4 : 0,
+            },
             {
               opacity: 1,
               scale: 1,
+              y: 0,
+              x: 0,
               duration: animationDuration,
-              ease: "power2.out",
+              ease: "back.out(2)",
             },
           );
         } else if (isRendered) {
           gsap.to(tooltipRef.current, {
             opacity: 0,
-            scale: 0.9,
-            duration: animationDuration,
+            scale: 0.92,
+            duration: animationDuration * 0.6,
             ease: "power2.in",
           });
         }
       },
-      { dependencies: [isVisible, isRendered, animationDuration] },
+      { dependencies: [isVisible, isRendered, animationDuration, position.actualSide, side] },
     );
 
     // Get arrow styles based on side
-    const getArrowStyles = () => {
-      const arrowBase = "absolute w-2 h-2 bg-popover border-border rotate-45";
-      switch (side) {
+    const getArrowStyles = (s: typeof side) => {
+      const arrowBase = "absolute w-2 h-2 bg-foreground rotate-45";
+      switch (s) {
         case "top":
-          return cn(
-            arrowBase,
-            "-translate-x-1/2 bottom-0 left-1/2 translate-y-1/2 border-r border-b",
-          );
+          return cn(arrowBase, "-translate-x-1/2 -bottom-1 left-1/2");
         case "bottom":
-          return cn(
-            arrowBase,
-            "-translate-x-1/2 -translate-y-1/2 top-0 left-1/2 border-t border-l",
-          );
+          return cn(arrowBase, "-translate-x-1/2 -top-1 left-1/2");
         case "left":
-          return cn(
-            arrowBase,
-            "-translate-y-1/2 top-1/2 right-0 translate-x-1/2 border-t border-r",
-          );
+          return cn(arrowBase, "-translate-y-1/2 -right-1 top-1/2");
         case "right":
-          return cn(
-            arrowBase,
-            "-translate-y-1/2 -translate-x-1/2 top-1/2 left-0 border-b border-l",
-          );
+          return cn(arrowBase, "-translate-y-1/2 -left-1 top-1/2");
         default:
-          return cn(
-            arrowBase,
-            "-translate-x-1/2 bottom-0 left-1/2 translate-y-1/2 border-r border-b",
-          );
-      }
-    };
-
-    // Get portal-specific positioning classes
-    const getPortalPositionStyles = () => {
-      switch (side) {
-        case "top":
-          return "-translate-x-1/2 -translate-y-full -mt-2";
-        case "bottom":
-          return "-translate-x-1/2 mt-2";
-        case "left":
-          return "-translate-x-full -translate-y-1/2 -ml-2";
-        case "right":
-          return "-translate-y-1/2 ml-2";
-        default:
-          return "-translate-x-1/2 -translate-y-full -mt-2";
+          return cn(arrowBase, "-translate-x-1/2 -bottom-1 left-1/2");
       }
     };
 
@@ -262,26 +316,33 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
         className={cn(
           usePortal
             ? [
-                "fixed z-50 px-2 py-1",
-                "rounded-md bg-popover text-popover-foreground",
-                "border border-border font-medium text-xs shadow-md",
-                "pointer-events-none",
-                getPortalPositionStyles(),
+                "fixed z-9999 px-3 py-1.5",
+                "rounded-lg bg-foreground text-background",
+                "font-medium text-xs shadow-lg",
+                "pointer-events-none select-none",
+                "max-w-xs",
               ]
             : tooltipVariants({ side }),
+          className,
         )}
         style={
           usePortal
             ? {
-                top: tooltipPosition.top,
-                left: tooltipPosition.left,
+                top: position.top,
+                left: position.left,
+                position: "absolute",
               }
             : undefined
         }
         role="tooltip"
       >
         {content}
-        {showArrow && <span className={getArrowStyles()} aria-hidden="true" />}
+        {showArrow && (
+          <span
+            className={getArrowStyles(usePortal ? position.actualSide : side)}
+            aria-hidden="true"
+          />
+        )}
       </div>
     );
 
@@ -295,7 +356,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
             ref.current = node;
           }
         }}
-        className={cn("relative inline-block", className)}
+        className={cn("relative inline-flex", className)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onFocus={handleMouseEnter}
