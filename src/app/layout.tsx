@@ -28,7 +28,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased transition-colors duration-300`}
       >
         <ThemeProvider defaultTheme="system" enableSystem>
-          <ToastProvider position="bottom-right">{children}</ToastProvider>
+          <ToastProvider position="bottom-right" showProgress pauseOnHover>
+            {children}
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>
