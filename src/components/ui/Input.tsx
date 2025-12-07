@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 export const inputVariants = tv({
   base: [
     "peer w-full bg-transparent",
-    "text-sm text-foreground placeholder:text-transparent",
+    "text-foreground placeholder:text-muted-foreground/60",
     "transition-all duration-200 ease-out",
     "focus:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-50",
@@ -35,8 +35,8 @@ export const inputVariants = tv({
     },
     inputSize: {
       sm: "h-8 text-xs",
-      md: "h-11 text-sm",
-      lg: "h-14 text-base",
+      md: "h-10 text-sm",
+      lg: "h-12 text-base",
     },
   },
   defaultVariants: {
@@ -45,52 +45,59 @@ export const inputVariants = tv({
   },
 });
 
-// Container styles
+// Container styles with Aceternity-inspired shadows
 const containerVariants = tv({
   base: [
     "group relative flex items-center",
     "rounded-lg border bg-background",
     "transition-all duration-200 ease-out",
+    "shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]",
+    "dark:shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.3),0px_1px_0px_0px_rgba(0,0,0,0.1),0px_0px_0px_1px_rgba(255,255,255,0.06)]",
     "has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed",
   ],
   variants: {
     variant: {
       default: [
-        "border-border",
-        "hover:border-muted-foreground/50",
-        "focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(var(--primary-rgb),0.1)]",
+        "border-transparent",
+        "hover:shadow-[0px_3px_6px_-2px_rgba(0,0,0,0.12),0px_2px_4px_0px_rgba(25,28,33,0.04),0px_0px_0px_1px_rgba(25,28,33,0.12)]",
+        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--primary-rgb),0.2),0px_2px_4px_0px_rgba(var(--primary-rgb),0.1)]",
+        "focus-within:border-primary",
       ],
       filled: [
         "border-transparent bg-muted/50",
         "hover:bg-muted/70",
-        "focus-within:bg-background focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(var(--primary-rgb),0.1)]",
+        "focus-within:bg-background focus-within:border-primary",
+        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--primary-rgb),0.2)]",
       ],
       flushed: [
-        "rounded-none border-x-0 border-t-0 border-b-2 bg-transparent",
-        "hover:border-muted-foreground/50",
-        "focus-within:border-primary",
+        "rounded-none border-x-0 border-t-0 border-b-2 border-border bg-transparent shadow-none",
+        "hover:border-muted-foreground/50 hover:shadow-none",
+        "focus-within:border-primary focus-within:shadow-none",
       ],
-      unstyled: "border-none bg-transparent",
+      unstyled: "border-none bg-transparent shadow-none hover:shadow-none focus-within:shadow-none",
     },
     state: {
       default: "",
       error: [
         "border-destructive",
-        "focus-within:border-destructive focus-within:shadow-[0_0_0_3px_rgba(var(--destructive-rgb),0.1)]",
+        "shadow-[0px_0px_0px_1px_rgba(var(--destructive-rgb),0.3)]",
+        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--destructive-rgb),0.2)]",
       ],
       success: [
         "border-success",
-        "focus-within:border-success focus-within:shadow-[0_0_0_3px_rgba(var(--success-rgb),0.1)]",
+        "shadow-[0px_0px_0px_1px_rgba(var(--success-rgb),0.3)]",
+        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--success-rgb),0.2)]",
       ],
       warning: [
         "border-warning",
-        "focus-within:border-warning focus-within:shadow-[0_0_0_3px_rgba(var(--warning-rgb),0.1)]",
+        "shadow-[0px_0px_0px_1px_rgba(var(--warning-rgb),0.3)]",
+        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--warning-rgb),0.2)]",
       ],
     },
     inputSize: {
-      sm: "h-8",
-      md: "h-11",
-      lg: "h-14",
+      sm: "",
+      md: "",
+      lg: "",
     },
   },
   defaultVariants: {
@@ -110,12 +117,12 @@ const labelVariants = tv({
   ],
   variants: {
     isFloating: {
-      true: "top-1 scale-75",
-      false: "top-1/2 -translate-y-1/2 scale-100",
+      true: "-top-2.5 left-2 scale-75 bg-background px-1 text-xs",
+      false: "top-1/2 left-3 -translate-y-1/2 scale-100",
     },
     hasLeftIcon: {
-      true: "left-10",
-      false: "left-3",
+      true: "",
+      false: "",
     },
     inputSize: {
       sm: "",
@@ -125,14 +132,19 @@ const labelVariants = tv({
   },
   compoundVariants: [
     {
+      isFloating: false,
+      hasLeftIcon: true,
+      className: "left-10",
+    },
+    {
       isFloating: true,
       inputSize: "sm",
-      className: "top-0.5 scale-[0.8]",
+      className: "-top-2 text-[10px]",
     },
     {
       isFloating: true,
       inputSize: "lg",
-      className: "top-2",
+      className: "-top-3",
     },
     {
       isFloating: false,
@@ -219,7 +231,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       onBlur,
       prefix,
       suffix,
-      floatingLabel = true,
+      floatingLabel = false,
       showCount,
       maxLength,
       animateOnError = true,
@@ -392,15 +404,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             onBlur={handleBlur}
             maxLength={maxLength}
             placeholder={floatingLabel && label ? " " : props.placeholder}
-            className={cn(
-              inputVariants({ variant, inputSize }),
-              getPaddingClasses(),
-              floatingLabel &&
-                label &&
-                (inputSize === "md" ? "pt-4" : inputSize === "lg" ? "pt-5" : "pt-3"),
-              !floatingLabel && "placeholder:text-muted-foreground",
-              className,
-            )}
+            className={cn(inputVariants({ variant, inputSize }), getPaddingClasses(), className)}
             aria-invalid={derivedState === "error"}
             aria-describedby={
               error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined

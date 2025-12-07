@@ -3,7 +3,7 @@
 This project is a custom component collection for Next.js using TailwindCSS v4, GSAP, and TypeScript. Follow these patterns and conventions to maintain consistency.
 
 - Never use inline SVG, use icons from `lucide-react`. If you can't find the required icon use `react-icons` as a last resort.
-- Always run `bun lint; bun format` after making changes and fix issues if any.
+- Always run `bun lint; bun format; bun typecheck` after making changes and fix issues if any.
 - Ensure all components are tree-shakeable and optimized for performance.
 - Always use `bun` for package management and scripts.
 - Always commit after as task is done.

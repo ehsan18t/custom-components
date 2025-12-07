@@ -305,7 +305,7 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Inputs"
-          description="Feature-rich inputs with clearable, prefix/suffix, icons, and multiple states."
+          description="Beautiful inputs with subtle shadows, clearable functionality, prefix/suffix support, and smooth focus states."
         >
           <div className="grid gap-8 lg:grid-cols-2">
             <DemoGroup title="Basic Variants">
@@ -314,7 +314,9 @@ export default function ComponentsPage() {
                   label="Default Input"
                   placeholder="Enter text..."
                   value={inputValue}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setInputValue(e.target.value)
+                  }
                 />
                 <Input label="Filled Variant" variant="filled" placeholder="Filled style" />
                 <Input label="Flushed Variant" variant="flushed" placeholder="Flushed style" />
@@ -327,7 +329,9 @@ export default function ComponentsPage() {
                   label="Clearable"
                   placeholder="Type something..."
                   value={clearableValue}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setClearableValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setClearableValue(e.target.value)
+                  }
                   clearable
                   onClear={() => setClearableValue("")}
                   helperText="Click the X button to clear"
@@ -401,11 +405,17 @@ export default function ComponentsPage() {
               </div>
             </DemoGroup>
 
-            <DemoGroup title="Sizes">
+            <DemoGroup title="Sizes & Floating Label">
               <div className="space-y-4">
-                <Input inputSize="sm" placeholder="Small input" />
-                <Input inputSize="md" placeholder="Medium input (default)" />
-                <Input inputSize="lg" placeholder="Large input" />
+                <Input inputSize="sm" label="Small Input" placeholder="Small size" />
+                <Input inputSize="md" label="Medium Input" placeholder="Medium size (default)" />
+                <Input inputSize="lg" label="Large Input" placeholder="Large size" />
+                <Input
+                  label="Floating Label"
+                  floatingLabel
+                  placeholder="Focus to see the label float"
+                  helperText="Label moves above the input on focus"
+                />
               </div>
             </DemoGroup>
           </div>
@@ -416,7 +426,7 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Textarea"
-          description="Auto-resizing textarea with character count and validation states."
+          description="Feature-rich textarea with auto-resize, character count, floating labels, and validation states."
         >
           <div className="grid gap-8 lg:grid-cols-2">
             <DemoGroup title="Basic">
