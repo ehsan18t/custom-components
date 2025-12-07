@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import { useReducedMotion } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -182,6 +183,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const labelRef = useRef<HTMLLabelElement>(null);
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
     const prevErrorRef = useRef<string | undefined>(error);
+    const prefersReducedMotion = useReducedMotion();
 
     // Determine if controlled or uncontrolled
     const isControlled = value !== undefined;
@@ -255,23 +257,23 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
         const labelEl = labelRef.current;
 
-        if (shouldFloat) {
-          gsap.to(labelEl, {
-            y: -14,
-            scale: 0.75,
-            duration: 0.25,
-            ease: "power2.out",
+        // Respect reduced motion preference
+        if (prefersReducedMotion) {
+          gsap.set(labelEl, {
+            y: shouldFloat ? -14 : 0,
+            scale: shouldFloat ? 0.75 : 1,
           });
-        } else {
-          gsap.to(labelEl, {
-            y: 0,
-            scale: 1,
-            duration: 0.25,
-            ease: "power2.out",
-          });
+          return;
         }
+
+        gsap.to(labelEl, {
+          y: shouldFloat ? -14 : 0,
+          scale: shouldFloat ? 0.75 : 1,
+          duration: 0.2,
+          ease: "power3.out",
+        });
       },
-      { dependencies: [shouldFloat, floatingLabel, label] },
+      { dependencies: [shouldFloat, floatingLabel, label, prefersReducedMotion] },
     );
 
     // Shake animation on error
@@ -279,23 +281,23 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       () => {
         if (!wrapperRef.current || !animateOnError) return;
 
-        if (error && !prevErrorRef.current) {
+        // Skip shake animation if reduced motion is preferred
+        if (error && !prevErrorRef.current && !prefersReducedMotion) {
           gsap.to(wrapperRef.current, {
             keyframes: [
-              { x: -8, duration: 0.06 },
-              { x: 8, duration: 0.06 },
-              { x: -6, duration: 0.06 },
-              { x: 6, duration: 0.06 },
-              { x: -3, duration: 0.06 },
-              { x: 3, duration: 0.06 },
-              { x: 0, duration: 0.06 },
+              { x: -6, duration: 0.05 },
+              { x: 6, duration: 0.05 },
+              { x: -4, duration: 0.05 },
+              { x: 4, duration: 0.05 },
+              { x: -2, duration: 0.05 },
+              { x: 0, duration: 0.05 },
             ],
             ease: "power2.inOut",
           });
         }
         prevErrorRef.current = error;
       },
-      { dependencies: [error, animateOnError] },
+      { dependencies: [error, animateOnError, prefersReducedMotion] },
     );
 
     const textareaId = id || props.name;

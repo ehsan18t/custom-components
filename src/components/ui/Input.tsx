@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import { useReducedMotion } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -188,6 +189,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const labelRef = useRef<HTMLLabelElement>(null);
     const inputRef = (ref as React.RefObject<HTMLInputElement>) || internalRef;
     const prevErrorRef = useRef<string | undefined>(error);
+    const prefersReducedMotion = useReducedMotion();
 
     const isPassword = type === "password";
     const inputType = isPassword && showPassword ? "text" : type;
@@ -243,50 +245,59 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         const labelEl = labelRef.current;
 
+        // Respect reduced motion preference
+        if (prefersReducedMotion) {
+          gsap.set(labelEl, {
+            y: shouldFloat ? -12 : 0,
+            scale: shouldFloat ? 0.75 : 1,
+            x: shouldFloat && leftIcon ? -28 : 0,
+          });
+          return;
+        }
+
         if (shouldFloat) {
           gsap.to(labelEl, {
             y: -12,
             scale: 0.75,
             x: leftIcon ? -28 : 0,
-            duration: 0.25,
-            ease: "power2.out",
+            duration: 0.2,
+            ease: "power3.out",
           });
         } else {
           gsap.to(labelEl, {
             y: 0,
             scale: 1,
             x: 0,
-            duration: 0.25,
-            ease: "power2.out",
+            duration: 0.2,
+            ease: "power3.out",
           });
         }
       },
-      { dependencies: [shouldFloat, floatingLabel, label, leftIcon] },
+      { dependencies: [shouldFloat, floatingLabel, label, leftIcon, prefersReducedMotion] },
     );
 
     // Shake animation on error
     useGSAP(
       () => {
-        if (!wrapperRef.current || !animateOnError) return;
+        if (!wrapperRef.current || !animateOnError || prefersReducedMotion) return;
 
         // Only animate when error appears (not on mount)
         if (error && !prevErrorRef.current) {
           gsap.to(wrapperRef.current, {
             keyframes: [
-              { x: -8, duration: 0.06 },
-              { x: 8, duration: 0.06 },
-              { x: -6, duration: 0.06 },
-              { x: 6, duration: 0.06 },
-              { x: -3, duration: 0.06 },
-              { x: 3, duration: 0.06 },
-              { x: 0, duration: 0.06 },
+              { x: -8, duration: 0.05 },
+              { x: 8, duration: 0.05 },
+              { x: -5, duration: 0.05 },
+              { x: 5, duration: 0.05 },
+              { x: -2, duration: 0.05 },
+              { x: 0, duration: 0.05 },
             ],
-            ease: "power2.inOut",
+            ease: "power2.out",
           });
         }
         prevErrorRef.current = error;
       },
-      { dependencies: [error, animateOnError] },
+      { dependencies: [error, animateOnError, prefersReducedMotion] },
     );
 
     const inputId = id || props.name;
