@@ -2,7 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useRef, type RefObject } from "react";
+import { type RefObject, useRef } from "react";
 import { useReducedMotion } from "./useReducedMotion";
 
 // ============================================================================
@@ -55,12 +55,9 @@ export interface AnimateOnMountOptions {
 function getAnimationPreset(
   type: AnimationType,
   distance: number,
-  scale: number
+  scale: number,
 ): { from: gsap.TweenVars; to: gsap.TweenVars } {
-  const presets: Record<
-    AnimationType,
-    { from: gsap.TweenVars; to: gsap.TweenVars }
-  > = {
+  const presets: Record<AnimationType, { from: gsap.TweenVars; to: gsap.TweenVars }> = {
     fadeIn: {
       from: { opacity: 0 },
       to: { opacity: 1 },
@@ -150,7 +147,7 @@ function getAnimationPreset(
  * ```
  */
 export function useAnimateOnMount<T extends HTMLElement = HTMLDivElement>(
-  options: AnimateOnMountOptions = {}
+  options: AnimateOnMountOptions = {},
 ): RefObject<T | null> {
   const {
     type = "fadeIn",
@@ -196,7 +193,7 @@ export function useAnimateOnMount<T extends HTMLElement = HTMLDivElement>(
       // Animate to final state
       gsap.to(ref.current, toVars);
     },
-    { dependencies: [type, duration, delay, ease, enabled, prefersReducedMotion] }
+    { dependencies: [type, duration, delay, ease, enabled, prefersReducedMotion] },
   );
 
   return ref;

@@ -1,36 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "@/context";
 import {
-  Button,
-  Input,
-  Textarea,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-  Badge,
   Avatar,
   AvatarGroup,
-  Skeleton,
-  SkeletonCard,
-  Modal,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
   Dropdown,
-  DropdownTrigger,
   DropdownContent,
   DropdownItem,
-  DropdownSeparator,
   DropdownLabel,
+  DropdownSeparator,
+  DropdownTrigger,
+  Input,
+  Modal,
+  Skeleton,
+  SkeletonCard,
+  Textarea,
   Tooltip,
   useToast,
 } from "@/components/ui";
+import { useTheme } from "@/context";
 import { useAnimateOnMount } from "@/hooks";
 
 export default function ComponentsPage() {
-  const { theme, setTheme, resolvedTheme, toggleTheme } = useTheme();
+  const { setTheme, resolvedTheme, toggleTheme } = useTheme();
   const { addToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -43,17 +43,18 @@ export default function ComponentsPage() {
   });
 
   return (
-    <div ref={containerRef} className="min-h-screen p-8 max-w-6xl mx-auto">
+    <div ref={containerRef} className="mx-auto min-h-screen max-w-6xl p-8">
       {/* Header */}
       <header className="mb-12">
-        <h1 className="text-4xl font-bold mb-4">Custom Components</h1>
-        <p className="text-muted-foreground text-lg mb-6">
-          A collection of animated, themeable components built with TailwindCSS v4, GSAP, and TypeScript.
+        <h1 className="mb-4 font-bold text-4xl">Custom Components</h1>
+        <p className="mb-6 text-lg text-muted-foreground">
+          A collection of animated, themeable components built with TailwindCSS v4, GSAP, and
+          TypeScript.
         </p>
 
         {/* Theme Toggle */}
         <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">Theme: {resolvedTheme}</span>
+          <span className="text-muted-foreground text-sm">Theme: {resolvedTheme}</span>
           <Button onClick={toggleTheme} variant="outline" size="sm">
             Toggle Theme
           </Button>
@@ -74,7 +75,7 @@ export default function ComponentsPage() {
       <div className="space-y-16">
         {/* Buttons Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Buttons</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Buttons</h2>
           <div className="flex flex-wrap gap-4">
             <Button variant="primary">Primary</Button>
             <Button variant="secondary">Secondary</Button>
@@ -85,13 +86,13 @@ export default function ComponentsPage() {
             <Button variant="ghost">Ghost</Button>
             <Button variant="link">Link</Button>
           </div>
-          <div className="flex flex-wrap gap-4 mt-4">
+          <div className="mt-4 flex flex-wrap gap-4">
             <Button size="sm">Small</Button>
             <Button size="md">Medium</Button>
             <Button size="lg">Large</Button>
             <Button size="xl">Extra Large</Button>
           </div>
-          <div className="flex flex-wrap gap-4 mt-4">
+          <div className="mt-4 flex flex-wrap gap-4">
             <Button isLoading loadingText="Loading...">
               Submit
             </Button>
@@ -102,8 +103,8 @@ export default function ComponentsPage() {
 
         {/* Inputs Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Inputs</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+          <h2 className="mb-6 font-semibold text-2xl">Inputs</h2>
+          <div className="grid max-w-2xl grid-cols-1 gap-6 md:grid-cols-2">
             <Input
               label="Default Input"
               placeholder="Enter text..."
@@ -116,32 +117,16 @@ export default function ComponentsPage() {
               helperText="We'll never share your email."
               type="email"
             />
-            <Input
-              label="Error State"
-              placeholder="Invalid input"
-              error="This field is required"
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter password"
-            />
-            <Input
-              label="Filled Variant"
-              variant="filled"
-              placeholder="Filled style"
-            />
-            <Input
-              label="Flushed Variant"
-              variant="flushed"
-              placeholder="Flushed style"
-            />
+            <Input label="Error State" placeholder="Invalid input" error="This field is required" />
+            <Input label="Password" type="password" placeholder="Enter password" />
+            <Input label="Filled Variant" variant="filled" placeholder="Filled style" />
+            <Input label="Flushed Variant" variant="flushed" placeholder="Flushed style" />
           </div>
         </section>
 
         {/* Textarea Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Textarea</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Textarea</h2>
           <div className="max-w-md">
             <Textarea
               label="Message"
@@ -157,8 +142,8 @@ export default function ComponentsPage() {
 
         {/* Cards Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Cards</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <h2 className="mb-6 font-semibold text-2xl">Cards</h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Card animated>
               <CardHeader>
                 <CardTitle>Default Card</CardTitle>
@@ -180,9 +165,7 @@ export default function ComponentsPage() {
                 <CardDescription>With shadow</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  This card has elevated shadow styling.
-                </p>
+                <p className="text-muted-foreground">This card has elevated shadow styling.</p>
               </CardContent>
             </Card>
 
@@ -192,9 +175,7 @@ export default function ComponentsPage() {
                 <CardDescription>Muted background</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  This card has a filled background style.
-                </p>
+                <p className="text-muted-foreground">This card has a filled background style.</p>
               </CardContent>
             </Card>
           </div>
@@ -202,7 +183,7 @@ export default function ComponentsPage() {
 
         {/* Badges Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Badges</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Badges</h2>
           <div className="flex flex-wrap gap-3">
             <Badge variant="primary">Primary</Badge>
             <Badge variant="secondary">Secondary</Badge>
@@ -213,7 +194,7 @@ export default function ComponentsPage() {
             <Badge variant="outline">Outline</Badge>
             <Badge variant="ghost">Ghost</Badge>
           </div>
-          <div className="flex flex-wrap gap-3 mt-4">
+          <div className="mt-4 flex flex-wrap gap-3">
             <Badge size="sm">Small</Badge>
             <Badge size="md">Medium</Badge>
             <Badge size="lg">Large</Badge>
@@ -226,42 +207,22 @@ export default function ComponentsPage() {
 
         {/* Avatars Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Avatars</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Avatars</h2>
           <div className="flex flex-wrap items-center gap-4">
-            <Avatar
-              src="https://i.pravatar.cc/150?img=1"
-              name="John Doe"
-              size="xs"
-            />
-            <Avatar
-              src="https://i.pravatar.cc/150?img=2"
-              name="Jane Smith"
-              size="sm"
-            />
-            <Avatar
-              src="https://i.pravatar.cc/150?img=3"
-              name="Bob Wilson"
-              size="md"
-            />
-            <Avatar
-              src="https://i.pravatar.cc/150?img=4"
-              name="Alice Brown"
-              size="lg"
-            />
-            <Avatar
-              src="https://i.pravatar.cc/150?img=5"
-              name="Charlie Davis"
-              size="xl"
-            />
+            <Avatar src="https://i.pravatar.cc/150?img=1" name="John Doe" size="xs" />
+            <Avatar src="https://i.pravatar.cc/150?img=2" name="Jane Smith" size="sm" />
+            <Avatar src="https://i.pravatar.cc/150?img=3" name="Bob Wilson" size="md" />
+            <Avatar src="https://i.pravatar.cc/150?img=4" name="Alice Brown" size="lg" />
+            <Avatar src="https://i.pravatar.cc/150?img=5" name="Charlie Davis" size="xl" />
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-4">
             <Avatar name="John Doe" size="md" />
             <Avatar name="Jane Smith" size="md" showStatus statusColor="online" />
             <Avatar name="Bob Wilson" size="md" showStatus statusColor="busy" />
             <Avatar name="Away User" size="md" showStatus statusColor="away" />
           </div>
           <div className="mt-4">
-            <p className="text-sm text-muted-foreground mb-2">Avatar Group:</p>
+            <p className="mb-2 text-muted-foreground text-sm">Avatar Group:</p>
             <AvatarGroup max={4}>
               <Avatar src="https://i.pravatar.cc/150?img=1" name="User 1" />
               <Avatar src="https://i.pravatar.cc/150?img=2" name="User 2" />
@@ -275,8 +236,8 @@ export default function ComponentsPage() {
 
         {/* Skeleton Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Skeletons</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h2 className="mb-6 font-semibold text-2xl">Skeletons</h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <Skeleton width="100%" height={20} />
               <Skeleton width="80%" height={20} />
@@ -289,7 +250,7 @@ export default function ComponentsPage() {
 
         {/* Tooltip Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Tooltips</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Tooltips</h2>
           <div className="flex flex-wrap gap-4">
             <Tooltip content="Tooltip on top" side="top">
               <Button variant="outline">Top</Button>
@@ -308,15 +269,13 @@ export default function ComponentsPage() {
 
         {/* Dropdown Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Dropdown</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Dropdown</h2>
           <Dropdown>
             <DropdownTrigger>Actions</DropdownTrigger>
             <DropdownContent>
               <DropdownLabel>Actions</DropdownLabel>
               <DropdownSeparator />
-              <DropdownItem onSelect={() => addToast({ title: "Edit clicked" })}>
-                Edit
-              </DropdownItem>
+              <DropdownItem onSelect={() => addToast({ title: "Edit clicked" })}>Edit</DropdownItem>
               <DropdownItem onSelect={() => addToast({ title: "Duplicate clicked" })}>
                 Duplicate
               </DropdownItem>
@@ -332,7 +291,7 @@ export default function ComponentsPage() {
 
         {/* Modal Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Modal</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Modal</h2>
           <Button onClick={() => setIsModalOpen(true)}>Open Modal</Button>
 
           <Modal
@@ -350,15 +309,15 @@ export default function ComponentsPage() {
             }
           >
             <p className="text-muted-foreground">
-              Modal content goes here. You can put any content inside the modal body.
-              The modal supports keyboard navigation (Escape to close) and click outside to close.
+              Modal content goes here. You can put any content inside the modal body. The modal
+              supports keyboard navigation (Escape to close) and click outside to close.
             </p>
           </Modal>
         </section>
 
         {/* Toast Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Toasts</h2>
+          <h2 className="mb-6 font-semibold text-2xl">Toasts</h2>
           <div className="flex flex-wrap gap-4">
             <Button
               onClick={() =>
@@ -427,7 +386,7 @@ export default function ComponentsPage() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 pt-8 border-t border-border text-center text-muted-foreground">
+      <footer className="mt-16 border-border border-t pt-8 text-center text-muted-foreground">
         <p>Built with Next.js, TailwindCSS v4, GSAP & TypeScript</p>
       </footer>
     </div>

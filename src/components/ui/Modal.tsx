@@ -2,20 +2,20 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { X } from "lucide-react";
 import {
   forwardRef,
+  type HTMLAttributes,
+  type MouseEvent,
   useCallback,
   useEffect,
   useRef,
   useState,
-  type HTMLAttributes,
-  type MouseEvent,
-  type KeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import { tv, type VariantProps } from "tailwind-variants";
-import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // Variants
@@ -23,10 +23,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export const modalVariants = tv({
   slots: {
-    overlay: [
-      "fixed inset-0 z-50 bg-black/50",
-      "flex items-center justify-center p-4",
-    ],
+    overlay: ["fixed inset-0 z-50 bg-black/50", "flex items-center justify-center p-4"],
     content: [
       "relative w-full max-h-[90vh] overflow-auto",
       "rounded-lg border bg-background shadow-lg",
@@ -132,7 +129,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isMounted, setIsMounted] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
@@ -167,7 +164,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
         // Delay unmount for exit animation
         const timer = setTimeout(
           () => setIsVisible(false),
-          prefersReducedMotion ? 0 : animationDuration * 1000
+          prefersReducedMotion ? 0 : animationDuration * 1000,
         );
         document.body.style.overflow = "";
         return () => clearTimeout(timer);
@@ -192,7 +189,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           gsap.fromTo(
             overlay,
             { opacity: 0 },
-            { opacity: 1, duration: animationDuration, ease: "power2.out" }
+            { opacity: 1, duration: animationDuration, ease: "power2.out" },
           );
           gsap.fromTo(
             content,
@@ -203,7 +200,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
               y: 0,
               duration: animationDuration,
               ease: "power2.out",
-            }
+            },
           );
         } else if (isVisible) {
           // Exit animation
@@ -221,7 +218,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           });
         }
       },
-      { dependencies: [open, isVisible, animationDuration] }
+      { dependencies: [open, isVisible, animationDuration] },
     );
 
     // Handle overlay click
@@ -231,7 +228,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           onClose();
         }
       },
-      [closeOnOverlayClick, onClose]
+      [closeOnOverlayClick, onClose],
     );
 
     // Handle escape key
@@ -248,11 +245,71 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       return () => document.removeEventListener("keydown", handleKeyDown);
     }, [closeOnEscape, open, onClose]);
 
-    // Focus trap - focus content on open
+    // Focus trap - keep focus within modal
     useEffect(() => {
-      if (open && contentRef.current) {
-        contentRef.current.focus();
+      if (!open || !contentRef.current) return;
+
+      const content = contentRef.current;
+      const focusableSelectors = [
+        "button:not([disabled])",
+        "a[href]",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(", ");
+
+      // Store previously focused element to restore later
+      const previouslyFocused = document.activeElement as HTMLElement;
+
+      // Get all focusable elements
+      const getFocusableElements = () => {
+        return Array.from(content.querySelectorAll<HTMLElement>(focusableSelectors));
+      };
+
+      // Focus the first focusable element or the close button
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length > 0) {
+        focusableElements[0].focus();
+      } else {
+        content.focus();
       }
+
+      // Handle Tab key to trap focus
+      const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+        if (e.key !== "Tab") return;
+
+        const focusable = getFocusableElements();
+        if (focusable.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          // Shift+Tab: If on first element, wrap to last
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          // Tab: If on last element, wrap to first
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        // Restore focus to previously focused element
+        previouslyFocused?.focus?.();
+      };
     }, [open]);
 
     if (!isMounted || !isVisible) return null;
@@ -265,12 +322,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
         aria-modal="true"
         role="dialog"
       >
-        <div
-          ref={mergedRef}
-          className={cn(styles.content(), className)}
-          tabIndex={-1}
-          {...props}
-        >
+        <div ref={mergedRef} className={cn(styles.content(), className)} tabIndex={-1} {...props}>
           {/* Close button */}
           {showCloseButton && (
             <button
@@ -279,7 +331,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
               onClick={onClose}
               aria-label="Close modal"
             >
-              <CloseIcon className="size-4" />
+              <X className="size-4" aria-hidden="true" />
             </button>
           )}
 
@@ -287,9 +339,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           {(title || description) && (
             <div className={styles.header()}>
               {title && <h2 className={styles.title()}>{title}</h2>}
-              {description && (
-                <p className={styles.description()}>{description}</p>
-              )}
+              {description && <p className={styles.description()}>{description}</p>}
             </div>
           )}
 
@@ -300,33 +350,11 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           {footer && <div className={styles.footer()}>{footer}</div>}
         </div>
       </div>,
-      document.body
+      document.body,
     );
-  }
+  },
 );
 
 Modal.displayName = "Modal";
-
-// ============================================================================
-// Icons
-// ============================================================================
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
 
 export default Modal;

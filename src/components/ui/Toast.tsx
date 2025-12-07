@@ -2,22 +2,22 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { AlertTriangle, CheckCircle, Info, X, XCircle } from "lucide-react";
 import {
   createContext,
   forwardRef,
+  type HTMLAttributes,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
-  useId,
   useRef,
   useState,
-  type HTMLAttributes,
-  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { tv, type VariantProps } from "tailwind-variants";
+import { useReducedMotion } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 // ============================================================================
 // Variants
@@ -74,7 +74,17 @@ export interface ToastProviderProps {
   /** Maximum number of toasts to show */
   maxToasts?: number;
   /** Position of toast container */
-  position?: "top-left" | "top-right" | "top-center" | "bottom-left" | "bottom-right" | "bottom-center";
+  position?:
+    | "top-left"
+    | "top-right"
+    | "top-center"
+    | "bottom-left"
+    | "bottom-right"
+    | "bottom-center";
+  /** Show a progress bar for auto-dismiss countdown */
+  showProgress?: boolean;
+  /** Pause auto-dismiss timer when hovering */
+  pauseOnHover?: boolean;
 }
 
 export interface ToastProps
@@ -83,6 +93,10 @@ export interface ToastProps
   toast: Toast;
   onRemove: () => void;
   animationDuration?: number;
+  /** Show a progress bar for auto-dismiss countdown */
+  showProgress?: boolean;
+  /** Pause auto-dismiss timer when hovering */
+  pauseOnHover?: boolean;
 }
 
 // ============================================================================
@@ -108,6 +122,8 @@ export function ToastProvider({
   defaultDuration = 5000,
   maxToasts = 5,
   position = "bottom-right",
+  showProgress = false,
+  pauseOnHover = true,
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -132,7 +148,7 @@ export function ToastProvider({
 
       return id;
     },
-    [defaultDuration, maxToasts]
+    [defaultDuration, maxToasts],
   );
 
   const removeToast = useCallback((id: string) => {
@@ -162,9 +178,10 @@ export function ToastProvider({
         createPortal(
           <div
             className={cn(
-              "fixed z-100 flex flex-col gap-2 w-full max-w-sm pointer-events-none",
-              positionClasses[position]
+              "pointer-events-none fixed z-100 flex w-full max-w-sm flex-col gap-2",
+              positionClasses[position],
             )}
+            role="region"
             aria-live="polite"
             aria-label="Notifications"
           >
@@ -174,10 +191,12 @@ export function ToastProvider({
                 toast={toast}
                 variant={toast.variant}
                 onRemove={() => removeToast(toast.id)}
+                showProgress={showProgress}
+                pauseOnHover={pauseOnHover}
               />
             ))}
           </div>,
-          document.body
+          document.body,
         )}
     </ToastContext.Provider>
   );
@@ -188,10 +207,29 @@ export function ToastProvider({
 // ============================================================================
 
 const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
-  ({ toast, variant, onRemove, animationDuration = 0.3, className, ...props }, ref) => {
+  (
+    {
+      toast,
+      variant,
+      onRemove,
+      animationDuration = 0.3,
+      showProgress = false,
+      pauseOnHover = true,
+      className,
+      ...props
+    },
+    ref,
+  ) => {
     const toastRef = useRef<HTMLDivElement>(null);
+    const progressRef = useRef<HTMLDivElement>(null);
     const prefersReducedMotion = useReducedMotion();
     const [isExiting, setIsExiting] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+
+    // Track remaining time for pauseOnHover
+    const remainingTimeRef = useRef(toast.duration ?? 0);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const startTimeRef = useRef<number>(0);
 
     // Merge refs
     const mergedRef = (node: HTMLDivElement) => {
@@ -203,16 +241,58 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
       }
     };
 
-    // Auto-dismiss
+    // Auto-dismiss with pause support
     useEffect(() => {
       if (!toast.duration || toast.duration === Infinity) return;
 
-      const timer = setTimeout(() => {
-        setIsExiting(true);
-      }, toast.duration);
+      const startTimer = () => {
+        startTimeRef.current = Date.now();
+        timerRef.current = setTimeout(() => {
+          setIsExiting(true);
+        }, remainingTimeRef.current);
+      };
 
-      return () => clearTimeout(timer);
-    }, [toast.duration]);
+      if (!isPaused) {
+        startTimer();
+      }
+
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+      };
+    }, [toast.duration, isPaused]);
+
+    // Handle pause/resume
+    const handleMouseEnter = () => {
+      if (!pauseOnHover || !toast.duration || toast.duration === Infinity) return;
+
+      // Calculate remaining time
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+
+      setIsPaused(true);
+
+      // Pause progress bar animation
+      if (progressRef.current) {
+        gsap.killTweensOf(progressRef.current);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!pauseOnHover) return;
+      setIsPaused(false);
+
+      // Resume progress bar animation
+      if (progressRef.current && showProgress && !prefersReducedMotion) {
+        const duration = remainingTimeRef.current / 1000;
+        gsap.to(progressRef.current, {
+          scaleX: 0,
+          duration,
+          ease: "none",
+        });
+      }
+    };
 
     // Handle exit animation complete
     useEffect(() => {
@@ -220,7 +300,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
 
       const timer = setTimeout(
         () => onRemove(),
-        prefersReducedMotion ? 0 : animationDuration * 1000
+        prefersReducedMotion ? 0 : animationDuration * 1000,
       );
 
       return () => clearTimeout(timer);
@@ -242,8 +322,26 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
               scale: 1,
               duration: animationDuration,
               ease: "power2.out",
-            }
+            },
           );
+
+          // Progress bar animation
+          if (
+            showProgress &&
+            progressRef.current &&
+            toast.duration &&
+            toast.duration !== Infinity
+          ) {
+            gsap.fromTo(
+              progressRef.current,
+              { scaleX: 1 },
+              {
+                scaleX: 0,
+                duration: toast.duration / 1000,
+                ease: "none",
+              },
+            );
+          }
         } else {
           // Exit animation
           gsap.to(toastRef.current, {
@@ -255,7 +353,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
           });
         }
       },
-      { dependencies: [isExiting, animationDuration] }
+      { dependencies: [isExiting, animationDuration] },
     );
 
     // Get icon based on variant
@@ -264,15 +362,31 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
 
       switch (toast.variant) {
         case "success":
-          return <CheckIcon className="size-5" />;
+          return <CheckCircle className="size-5" aria-hidden="true" />;
         case "destructive":
-          return <XCircleIcon className="size-5" />;
+          return <XCircle className="size-5" aria-hidden="true" />;
         case "warning":
-          return <AlertIcon className="size-5" />;
+          return <AlertTriangle className="size-5" aria-hidden="true" />;
         case "info":
-          return <InfoIcon className="size-5" />;
+          return <Info className="size-5" aria-hidden="true" />;
         default:
           return null;
+      }
+    };
+
+    // Get progress bar color based on variant
+    const getProgressColor = () => {
+      switch (variant) {
+        case "success":
+          return "bg-success";
+        case "destructive":
+          return "bg-destructive";
+        case "warning":
+          return "bg-warning";
+        case "info":
+          return "bg-info";
+        default:
+          return "bg-foreground/20";
       }
     };
 
@@ -281,19 +395,26 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
         ref={mergedRef}
         className={cn(toastVariants({ variant }), className)}
         role="alert"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         {...props}
       >
+        {/* Progress bar */}
+        {showProgress && toast.duration && toast.duration !== Infinity && (
+          <div
+            ref={progressRef}
+            className={cn("absolute right-0 bottom-0 left-0 h-1 origin-left", getProgressColor())}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Icon */}
         {getIcon() && <span className="shrink-0">{getIcon()}</span>}
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          {toast.title && (
-            <p className="text-sm font-semibold">{toast.title}</p>
-          )}
-          {toast.description && (
-            <p className="text-sm opacity-90">{toast.description}</p>
-          )}
+        <div className="min-w-0 flex-1">
+          {toast.title && <p className="font-semibold text-sm">{toast.title}</p>}
+          {toast.description && <p className="text-sm opacity-90">{toast.description}</p>}
         </div>
 
         {/* Action */}
@@ -301,7 +422,7 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
           <button
             type="button"
             onClick={toast.action.onClick}
-            className="shrink-0 text-sm font-medium underline-offset-4 hover:underline"
+            className="shrink-0 font-medium text-sm underline-offset-4 hover:underline"
           >
             {toast.action.label}
           </button>
@@ -311,113 +432,16 @@ const ToastItem = forwardRef<HTMLDivElement, ToastProps>(
         <button
           type="button"
           onClick={() => setIsExiting(true)}
-          className="shrink-0 rounded-md p-1 opacity-70 hover:opacity-100 transition-opacity"
+          className="shrink-0 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100"
           aria-label="Dismiss"
         >
-          <CloseIcon className="size-4" />
+          <X className="size-4" aria-hidden="true" />
         </button>
       </div>
     );
-  }
+  },
 );
 
 ToastItem.displayName = "ToastItem";
-
-// ============================================================================
-// Icons
-// ============================================================================
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <path d="m9 11 3 3L22 4" />
-    </svg>
-  );
-}
-
-function XCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="m15 9-6 6" />
-      <path d="m9 9 6 6" />
-    </svg>
-  );
-}
-
-function AlertIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
-    </svg>
-  );
-}
-
-function InfoIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4" />
-      <path d="M12 8h.01" />
-    </svg>
-  );
-}
 
 export default ToastProvider;

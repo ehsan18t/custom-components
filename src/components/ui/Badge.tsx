@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { forwardRef, type HTMLAttributes } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
 import { cn } from "@/lib/utils";
@@ -85,7 +86,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <span
@@ -96,10 +97,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         {/* Dot indicator */}
         {dot && (
           <span
-            className={cn(
-              "size-1.5 rounded-full",
-              dotColor ? dotColor : "bg-current opacity-75"
-            )}
+            className={cn("size-1.5 rounded-full", dotColor ? dotColor : "bg-current opacity-75")}
           />
         )}
 
@@ -120,39 +118,17 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
               e.stopPropagation();
               onRemove?.();
             }}
-            className="ml-0.5 -mr-1 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+            className="-mr-1 ml-0.5 rounded-full p-0.5 transition-colors hover:bg-black/10 dark:hover:bg-white/10"
             aria-label="Remove"
           >
-            <CloseIcon className="size-3" />
+            <X className="size-3" aria-hidden="true" />
           </button>
         )}
       </span>
     );
-  }
+  },
 );
 
 Badge.displayName = "Badge";
-
-// ============================================================================
-// Icons
-// ============================================================================
-
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
 
 export default Badge;

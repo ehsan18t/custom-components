@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, type HTMLAttributes, type ImgHTMLAttributes } from "react";
+import Image from "next/image";
+import { forwardRef, type HTMLAttributes, type ImgHTMLAttributes, useState } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
 import { cn } from "@/lib/utils";
 
@@ -145,33 +146,52 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       imageProps,
       ...props
     },
-    ref
+    ref,
   ) => {
     const styles = avatarVariants({ size, rounded, statusColor });
 
     // Derive fallback from name if not provided
     const displayFallback = fallback || (name ? getInitials(name) : "?");
+    // State for image error handling
+    const [imageError, setImageError] = useState(false);
+
+    // Accessibility label
+    const ariaLabel = alt || name || "User avatar";
+
+    // Show fallback if no src or image failed to load
+    const showFallback = !src || imageError;
 
     return (
-      <div ref={ref} className={cn(styles.root(), className)} {...props}>
-        {src ? (
-          <img
+      <div
+        ref={ref}
+        className={cn(styles.root(), className)}
+        role="img"
+        aria-label={ariaLabel}
+        {...props}
+      >
+        {!showFallback ? (
+          <Image
             src={src}
-            alt={alt || name || "Avatar"}
+            alt=""
+            fill
+            aria-hidden="true"
             className={styles.image()}
-            {...imageProps}
+            onError={() => setImageError(true)}
+            {...(imageProps as Omit<typeof imageProps, "src" | "alt">)}
           />
         ) : (
-          <span className={styles.fallback()}>{displayFallback}</span>
+          <span className={styles.fallback()} aria-hidden="true">
+            {displayFallback}
+          </span>
         )}
 
         {/* Status indicator */}
         {showStatus && statusColor && (
-          <span className={styles.status()} aria-hidden="true" />
+          <span className={styles.status()} aria-hidden="true" title={statusColor} />
         )}
       </div>
     );
-  }
+  },
 );
 
 Avatar.displayName = "Avatar";
@@ -214,7 +234,7 @@ export const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 AvatarGroup.displayName = "AvatarGroup";

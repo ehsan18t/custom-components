@@ -2,6 +2,7 @@
 
 import { forwardRef, type HTMLAttributes } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import { useReducedMotion } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -52,19 +53,14 @@ export interface SkeletonProps
 
 export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
   (
-    {
-      className,
-      variant,
-      animation,
-      width,
-      height,
-      lines,
-      gap = "0.5rem",
-      style,
-      ...props
-    },
-    ref
+    { className, variant, animation, width, height, lines, gap = "0.5rem", style, ...props },
+    ref,
   ) => {
+    const prefersReducedMotion = useReducedMotion();
+
+    // Disable animations if user prefers reduced motion
+    const effectiveAnimation = prefersReducedMotion ? "none" : animation;
+
     // Handle multiple lines for text variant
     if (lines && lines > 1) {
       return (
@@ -72,20 +68,24 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
           ref={ref}
           className="flex flex-col"
           style={{ gap }}
+          role="progressbar"
+          aria-busy="true"
+          aria-label="Loading content"
           {...props}
         >
           {Array.from({ length: lines }).map((_, index) => (
             <div
               key={index}
               className={cn(
-                skeletonVariants({ variant: "text", animation }),
-                className
+                skeletonVariants({ variant: "text", animation: effectiveAnimation }),
+                className,
               )}
               style={{
                 width: index === lines - 1 ? "70%" : width || "100%",
                 height: height || undefined,
                 ...style,
               }}
+              aria-hidden="true"
             />
           ))}
         </div>
@@ -95,16 +95,19 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
     return (
       <div
         ref={ref}
-        className={cn(skeletonVariants({ variant, animation }), className)}
+        className={cn(skeletonVariants({ variant, animation: effectiveAnimation }), className)}
         style={{
           width: typeof width === "number" ? `${width}px` : width,
           height: typeof height === "number" ? `${height}px` : height,
           ...style,
         }}
+        role="progressbar"
+        aria-busy="true"
+        aria-label="Loading"
         {...props}
       />
     );
-  }
+  },
 );
 
 Skeleton.displayName = "Skeleton";
@@ -138,7 +141,7 @@ export const SkeletonAvatar = forwardRef<HTMLDivElement, SkeletonAvatarProps>(
         {...props}
       />
     );
-  }
+  },
 );
 
 SkeletonAvatar.displayName = "SkeletonAvatar";
@@ -153,23 +156,15 @@ export interface SkeletonCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(
-  (
-    { className, showAvatar = true, bodyLines = 3, showImage = false, ...props },
-    ref
-  ) => {
+  ({ className, showAvatar = true, bodyLines = 3, showImage = false, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn(
-          "rounded-lg border border-border bg-card p-4 space-y-4",
-          className
-        )}
+        className={cn("space-y-4 rounded-lg border border-border bg-card p-4", className)}
         {...props}
       >
         {/* Image */}
-        {showImage && (
-          <Skeleton variant="rectangular" className="h-40 w-full rounded-md" />
-        )}
+        {showImage && <Skeleton variant="rectangular" className="h-40 w-full rounded-md" />}
 
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -184,7 +179,7 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(
         <Skeleton variant="text" lines={bodyLines} />
       </div>
     );
-  }
+  },
 );
 
 SkeletonCard.displayName = "SkeletonCard";

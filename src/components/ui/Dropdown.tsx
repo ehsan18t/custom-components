@@ -2,21 +2,22 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ChevronDown } from "lucide-react";
 import {
   createContext,
   forwardRef,
+  type HTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
-  type HTMLAttributes,
-  type KeyboardEvent,
-  type ReactNode,
 } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
-import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // Variants
@@ -85,9 +86,7 @@ interface DropdownContextValue {
   contentRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const DropdownContext = createContext<DropdownContextValue | undefined>(
-  undefined
-);
+const DropdownContext = createContext<DropdownContextValue | undefined>(undefined);
 
 function useDropdown() {
   const context = useContext(DropdownContext);
@@ -110,8 +109,7 @@ export interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
   onOpenChange?: (open: boolean) => void;
 }
 
-export interface DropdownTriggerProps
-  extends HTMLAttributes<HTMLButtonElement> {
+export interface DropdownTriggerProps extends HTMLAttributes<HTMLButtonElement> {
   /** Whether to show chevron icon */
   showChevron?: boolean;
 }
@@ -139,7 +137,10 @@ export interface DropdownItemProps extends HTMLAttributes<HTMLDivElement> {
 // ============================================================================
 
 export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
-  ({ open: controlledOpen, defaultOpen = false, onOpenChange, children, className, ...props }, ref) => {
+  (
+    { open: controlledOpen, defaultOpen = false, onOpenChange, children, className, ...props },
+    ref,
+  ) => {
     const [internalOpen, setInternalOpen] = useState(defaultOpen);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -153,7 +154,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
         }
         onOpenChange?.(newOpen);
       },
-      [controlledOpen, onOpenChange]
+      [controlledOpen, onOpenChange],
     );
 
     // Close on click outside
@@ -162,10 +163,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
 
       const handleClickOutside = (e: MouseEvent) => {
         const target = e.target as Node;
-        if (
-          !triggerRef.current?.contains(target) &&
-          !contentRef.current?.contains(target)
-        ) {
+        if (!triggerRef.current?.contains(target) && !contentRef.current?.contains(target)) {
           setOpen(false);
         }
       };
@@ -190,15 +188,13 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
     }, [open, setOpen]);
 
     return (
-      <DropdownContext.Provider
-        value={{ open, setOpen, triggerRef, contentRef }}
-      >
+      <DropdownContext.Provider value={{ open, setOpen, triggerRef, contentRef }}>
         <div ref={ref} className={cn("relative inline-block", className)} {...props}>
           {children}
         </div>
       </DropdownContext.Provider>
     );
-  }
+  },
 );
 
 Dropdown.displayName = "Dropdown";
@@ -240,33 +236,22 @@ export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProp
       >
         {children}
         {showChevron && (
-          <ChevronIcon
-            className={cn(
-              "size-4 transition-transform duration-200",
-              open && "rotate-180"
-            )}
+          <ChevronDown
+            className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
+            aria-hidden="true"
           />
         )}
       </button>
     );
-  }
+  },
 );
 
 DropdownTrigger.displayName = "DropdownTrigger";
 
 export const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
-  (
-    {
-      className,
-      align,
-      side,
-      animationDuration = 0.2,
-      children,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, align, side, animationDuration = 0.2, children, ...props }, ref) => {
     const { open, contentRef } = useDropdown();
+    const [isVisible, setIsVisible] = useState(false);
     const prefersReducedMotion = useReducedMotion();
     const styles = dropdownVariants({ align, side });
 
@@ -280,12 +265,28 @@ export const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
       }
     };
 
+    // Handle visibility state for exit animation
+    useEffect(() => {
+      if (open) {
+        setIsVisible(true);
+      } else if (!prefersReducedMotion) {
+        // Delay hiding for exit animation
+        const timer = setTimeout(() => {
+          setIsVisible(false);
+        }, animationDuration * 1000);
+        return () => clearTimeout(timer);
+      } else {
+        setIsVisible(false);
+      }
+    }, [open, animationDuration, prefersReducedMotion]);
+
     // GSAP animation
     useGSAP(
       () => {
         if (!contentRef.current || prefersReducedMotion) return;
 
         if (open) {
+          // Enter animation
           gsap.fromTo(
             contentRef.current,
             { opacity: 0, y: -8, scale: 0.95 },
@@ -295,26 +296,30 @@ export const DropdownContent = forwardRef<HTMLDivElement, DropdownContentProps>(
               scale: 1,
               duration: animationDuration,
               ease: "power2.out",
-            }
+            },
           );
+        } else if (isVisible) {
+          // Exit animation
+          gsap.to(contentRef.current, {
+            opacity: 0,
+            y: -8,
+            scale: 0.95,
+            duration: animationDuration,
+            ease: "power2.in",
+          });
         }
       },
-      { dependencies: [open, animationDuration] }
+      { dependencies: [open, isVisible, animationDuration] },
     );
 
-    if (!open) return null;
+    if (!isVisible) return null;
 
     return (
-      <div
-        ref={mergedRef}
-        className={cn(styles.content(), className)}
-        role="menu"
-        {...props}
-      >
+      <div ref={mergedRef} className={cn(styles.content(), className)} role="menu" {...props}>
         {children}
       </div>
     );
-  }
+  },
 );
 
 DropdownContent.displayName = "DropdownContent";
@@ -350,64 +355,38 @@ export const DropdownItem = forwardRef<HTMLDivElement, DropdownItemProps>(
       >
         {icon && <span className="[&_svg]:size-4">{icon}</span>}
         <span className="flex-1">{children}</span>
-        {shortcut && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {shortcut}
-          </span>
-        )}
+        {shortcut && <span className="ml-auto text-muted-foreground text-xs">{shortcut}</span>}
       </div>
     );
-  }
+  },
 );
 
 DropdownItem.displayName = "DropdownItem";
 
-export const DropdownSeparator = forwardRef<
-  HTMLDivElement,
-  HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const styles = dropdownVariants();
-  return (
-    <div
-      ref={ref}
-      className={cn(styles.separator(), className)}
-      role="separator"
-      {...props}
-    />
-  );
-});
+export const DropdownSeparator = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const styles = dropdownVariants();
+    return (
+      <div
+        ref={ref}
+        className={cn(styles.separator(), className)}
+        role="none"
+        aria-hidden="true"
+        {...props}
+      />
+    );
+  },
+);
 
 DropdownSeparator.displayName = "DropdownSeparator";
 
-export const DropdownLabel = forwardRef<
-  HTMLDivElement,
-  HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const styles = dropdownVariants();
-  return <div ref={ref} className={cn(styles.label(), className)} {...props} />;
-});
+export const DropdownLabel = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const styles = dropdownVariants();
+    return <div ref={ref} className={cn(styles.label(), className)} {...props} />;
+  },
+);
 
 DropdownLabel.displayName = "DropdownLabel";
-
-// ============================================================================
-// Icons
-// ============================================================================
-
-function ChevronIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
 
 export default Dropdown;

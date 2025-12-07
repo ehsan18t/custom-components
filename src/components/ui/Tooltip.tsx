@@ -3,16 +3,22 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import {
+  cloneElement,
   forwardRef,
+  type HTMLAttributes,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
-  type HTMLAttributes,
-  type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { tv, type VariantProps } from "tailwind-variants";
-import { cn } from "@/lib/utils";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
 // Variants
@@ -55,6 +61,8 @@ export interface TooltipProps
   disabled?: boolean;
   /** Whether to show arrow */
   showArrow?: boolean;
+  /** Render tooltip in a portal to prevent clipping */
+  usePortal?: boolean;
 }
 
 // ============================================================================
@@ -65,22 +73,65 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
   (
     {
       className,
-      side,
+      side = "top",
       content,
       delay = 300,
       animationDuration = 0.15,
       disabled = false,
       showArrow = true,
+      usePortal = false,
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isVisible, setIsVisible] = useState(false);
     const [isRendered, setIsRendered] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const prefersReducedMotion = useReducedMotion();
+    const tooltipId = useId();
+
+    // Mount check for portal
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+
+    // Calculate tooltip position when using portal
+    const updatePosition = useCallback(() => {
+      if (!containerRef.current || !usePortal) return;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
+      let top = 0;
+      let left = 0;
+
+      switch (side) {
+        case "top":
+          top = rect.top + scrollY;
+          left = rect.left + scrollX + rect.width / 2;
+          break;
+        case "bottom":
+          top = rect.bottom + scrollY;
+          left = rect.left + scrollX + rect.width / 2;
+          break;
+        case "left":
+          top = rect.top + scrollY + rect.height / 2;
+          left = rect.left + scrollX;
+          break;
+        case "right":
+          top = rect.top + scrollY + rect.height / 2;
+          left = rect.right + scrollX;
+          break;
+      }
+
+      setTooltipPosition({ top, left });
+    }, [side, usePortal]);
 
     // Handle mouse enter
     const handleMouseEnter = () => {
@@ -88,6 +139,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       timeoutRef.current = setTimeout(() => {
         setIsRendered(true);
         setIsVisible(true);
+        updatePosition();
       }, delay);
     };
 
@@ -113,7 +165,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       if (!isVisible && isRendered) {
         const timer = setTimeout(
           () => setIsRendered(false),
-          prefersReducedMotion ? 0 : animationDuration * 1000
+          prefersReducedMotion ? 0 : animationDuration * 1000,
         );
         return () => clearTimeout(timer);
       }
@@ -133,7 +185,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
               scale: 1,
               duration: animationDuration,
               ease: "power2.out",
-            }
+            },
           );
         } else if (isRendered) {
           gsap.to(tooltipRef.current, {
@@ -144,7 +196,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
           });
         }
       },
-      { dependencies: [isVisible, isRendered, animationDuration] }
+      { dependencies: [isVisible, isRendered, animationDuration] },
     );
 
     // Get arrow styles based on side
@@ -152,21 +204,97 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
       const arrowBase = "absolute w-2 h-2 bg-popover border-border rotate-45";
       switch (side) {
         case "top":
-          return cn(arrowBase, "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-b border-r");
+          return cn(
+            arrowBase,
+            "-translate-x-1/2 bottom-0 left-1/2 translate-y-1/2 border-r border-b",
+          );
         case "bottom":
-          return cn(arrowBase, "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 border-t border-l");
+          return cn(
+            arrowBase,
+            "-translate-x-1/2 -translate-y-1/2 top-0 left-1/2 border-t border-l",
+          );
         case "left":
-          return cn(arrowBase, "right-0 top-1/2 -translate-y-1/2 translate-x-1/2 border-t border-r");
+          return cn(
+            arrowBase,
+            "-translate-y-1/2 top-1/2 right-0 translate-x-1/2 border-t border-r",
+          );
         case "right":
-          return cn(arrowBase, "left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-b border-l");
+          return cn(
+            arrowBase,
+            "-translate-y-1/2 -translate-x-1/2 top-1/2 left-0 border-b border-l",
+          );
         default:
-          return cn(arrowBase, "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-b border-r");
+          return cn(
+            arrowBase,
+            "-translate-x-1/2 bottom-0 left-1/2 translate-y-1/2 border-r border-b",
+          );
       }
     };
 
+    // Get portal-specific positioning classes
+    const getPortalPositionStyles = () => {
+      switch (side) {
+        case "top":
+          return "-translate-x-1/2 -translate-y-full -mt-2";
+        case "bottom":
+          return "-translate-x-1/2 mt-2";
+        case "left":
+          return "-translate-x-full -translate-y-1/2 -ml-2";
+        case "right":
+          return "-translate-y-1/2 ml-2";
+        default:
+          return "-translate-x-1/2 -translate-y-full -mt-2";
+      }
+    };
+
+    // Clone children to add aria-describedby
+    const childElement = isValidElement(children)
+      ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
+          "aria-describedby": isVisible ? tooltipId : undefined,
+        })
+      : children;
+
+    // Tooltip content element
+    const tooltipContent = (
+      <div
+        ref={tooltipRef}
+        id={tooltipId}
+        className={cn(
+          usePortal
+            ? [
+                "fixed z-50 px-2 py-1",
+                "rounded-md bg-popover text-popover-foreground",
+                "border border-border font-medium text-xs shadow-md",
+                "pointer-events-none",
+                getPortalPositionStyles(),
+              ]
+            : tooltipVariants({ side }),
+        )}
+        style={
+          usePortal
+            ? {
+                top: tooltipPosition.top,
+                left: tooltipPosition.left,
+              }
+            : undefined
+        }
+        role="tooltip"
+      >
+        {content}
+        {showArrow && <span className={getArrowStyles()} aria-hidden="true" />}
+      </div>
+    );
+
     return (
       <div
-        ref={ref}
+        ref={(node) => {
+          containerRef.current = node;
+          if (typeof ref === "function") {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+        }}
         className={cn("relative inline-block", className)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -174,21 +302,13 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(
         onBlur={handleMouseLeave}
         {...props}
       >
-        {children}
+        {childElement}
 
-        {isRendered && (
-          <div
-            ref={tooltipRef}
-            className={cn(tooltipVariants({ side }))}
-            role="tooltip"
-          >
-            {content}
-            {showArrow && <span className={getArrowStyles()} />}
-          </div>
-        )}
+        {isRendered &&
+          (usePortal && isMounted ? createPortal(tooltipContent, document.body) : tooltipContent)}
       </div>
     );
-  }
+  },
 );
 
 Tooltip.displayName = "Tooltip";

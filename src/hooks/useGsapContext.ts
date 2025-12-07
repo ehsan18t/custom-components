@@ -3,7 +3,7 @@
 import { useGSAP as useGSAPOriginal } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useRef, type RefObject } from "react";
+import { type RefObject, useRef } from "react";
 
 // Register plugins
 if (typeof window !== "undefined") {
@@ -73,7 +73,7 @@ export interface GsapContextReturn<T extends HTMLElement> {
  */
 export function useGsapContext<T extends HTMLElement = HTMLDivElement>(
   callback?: (context: gsap.Context) => void,
-  options: GsapContextOptions = {}
+  options: GsapContextOptions = {},
 ): GsapContextReturn<T> {
   const { dependencies = [], scope, revertOnUnmount = true } = options;
 
@@ -89,7 +89,7 @@ export function useGsapContext<T extends HTMLElement = HTMLDivElement>(
       scope: scope || containerRef,
       dependencies,
       revertOnUpdate: revertOnUnmount,
-    }
+    },
   );
 
   return {

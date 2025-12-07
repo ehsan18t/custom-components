@@ -3,7 +3,7 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useRef, type RefObject } from "react";
+import { type RefObject, useRef } from "react";
 import { useReducedMotion } from "./useReducedMotion";
 
 // Register ScrollTrigger plugin
@@ -74,12 +74,9 @@ export interface ScrollTriggerOptions {
 function getScrollAnimationPreset(
   type: ScrollAnimationType,
   distance: number,
-  scale: number
+  scale: number,
 ): { from: gsap.TweenVars; to: gsap.TweenVars } {
-  const presets: Record<
-    ScrollAnimationType,
-    { from: gsap.TweenVars; to: gsap.TweenVars }
-  > = {
+  const presets: Record<ScrollAnimationType, { from: gsap.TweenVars; to: gsap.TweenVars }> = {
     fadeIn: {
       from: { opacity: 0 },
       to: { opacity: 1 },
@@ -156,7 +153,7 @@ function getScrollAnimationPreset(
  * ```
  */
 export function useScrollTrigger<T extends HTMLElement = HTMLDivElement>(
-  options: ScrollTriggerOptions = {}
+  options: ScrollTriggerOptions = {},
 ): RefObject<T | null> {
   const {
     type = "fadeInUp",
@@ -221,17 +218,8 @@ export function useScrollTrigger<T extends HTMLElement = HTMLDivElement>(
       gsap.to(ref.current, toVars);
     },
     {
-      dependencies: [
-        type,
-        duration,
-        ease,
-        enabled,
-        prefersReducedMotion,
-        start,
-        end,
-        scrub,
-      ],
-    }
+      dependencies: [type, duration, ease, enabled, prefersReducedMotion, start, end, scrub],
+    },
   );
 
   return ref;

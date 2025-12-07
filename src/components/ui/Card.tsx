@@ -2,8 +2,9 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { forwardRef, useRef, type HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes, useRef } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import { useReducedMotion } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -12,10 +13,7 @@ import { cn } from "@/lib/utils";
 
 export const cardVariants = tv({
   slots: {
-    root: [
-      "rounded-lg border bg-card text-card-foreground",
-      "transition-all duration-200",
-    ],
+    root: ["rounded-lg border bg-card text-card-foreground", "transition-all duration-200"],
     header: "flex flex-col space-y-1.5 p-6",
     title: "text-xl font-semibold leading-none tracking-tight",
     description: "text-sm text-muted-foreground",
@@ -111,8 +109,6 @@ export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
 // Components
 // ============================================================================
 
-const { root, header, title, description, content, footer } = cardVariants();
-
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   (
     {
@@ -126,9 +122,10 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const cardRef = useRef<HTMLDivElement>(null);
+    const prefersReducedMotion = useReducedMotion();
 
     // Merge refs
     const mergedRef = (node: HTMLDivElement) => {
@@ -140,10 +137,13 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       }
     };
 
+    // Determine if we should animate
+    const shouldAnimate = animated && !prefersReducedMotion;
+
     // GSAP hover animation
     useGSAP(
       () => {
-        if (!cardRef.current || !animated) return;
+        if (!cardRef.current || !shouldAnimate) return;
 
         const card = cardRef.current;
 
@@ -173,7 +173,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           card.removeEventListener("mouseleave", handleMouseLeave);
         };
       },
-      { dependencies: [animated, hoverScale, hoverLift] }
+      { dependencies: [shouldAnimate, hoverScale, hoverLift] },
     );
 
     const styles = cardVariants({ variant, interactive, padding });
@@ -183,7 +183,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         {children}
       </div>
     );
-  }
+  },
 );
 
 Card.displayName = "Card";
@@ -191,30 +191,26 @@ Card.displayName = "Card";
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, padding = "md", ...props }, ref) => {
     const styles = cardVariants({ padding });
-    return (
-      <div ref={ref} className={cn(styles.header(), className)} {...props} />
-    );
-  }
+    return <div ref={ref} className={cn(styles.header(), className)} {...props} />;
+  },
 );
 
 CardHeader.displayName = "CardHeader";
 
 export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ className, as: Component = "h3", ...props }, ref) => {
-    return (
-      <Component ref={ref} className={cn(title(), className)} {...props} />
-    );
-  }
+    const styles = cardVariants();
+    return <Component ref={ref} className={cn(styles.title(), className)} {...props} />;
+  },
 );
 
 CardTitle.displayName = "CardTitle";
 
 export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ className, ...props }, ref) => {
-    return (
-      <p ref={ref} className={cn(description(), className)} {...props} />
-    );
-  }
+    const styles = cardVariants();
+    return <p ref={ref} className={cn(styles.description(), className)} {...props} />;
+  },
 );
 
 CardDescription.displayName = "CardDescription";
@@ -222,10 +218,8 @@ CardDescription.displayName = "CardDescription";
 export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, padding = "md", ...props }, ref) => {
     const styles = cardVariants({ padding });
-    return (
-      <div ref={ref} className={cn(styles.content(), className)} {...props} />
-    );
-  }
+    return <div ref={ref} className={cn(styles.content(), className)} {...props} />;
+  },
 );
 
 CardContent.displayName = "CardContent";
@@ -233,10 +227,8 @@ CardContent.displayName = "CardContent";
 export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, padding = "md", ...props }, ref) => {
     const styles = cardVariants({ padding });
-    return (
-      <div ref={ref} className={cn(styles.footer(), className)} {...props} />
-    );
-  }
+    return <div ref={ref} className={cn(styles.footer(), className)} {...props} />;
+  },
 );
 
 CardFooter.displayName = "CardFooter";

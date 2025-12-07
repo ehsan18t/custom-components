@@ -1,6 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider, themeScript } from "@/context";
 import { ToastProvider } from "@/components/ui";
+import { ThemeProvider, themeScript } from "@/context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,9 +28,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased transition-colors duration-300`}
       >
         <ThemeProvider defaultTheme="system" enableSystem>
-          <ToastProvider position="bottom-right">
-            {children}
-          </ToastProvider>
+          <ToastProvider position="bottom-right">{children}</ToastProvider>
         </ThemeProvider>
       </body>
     </html>

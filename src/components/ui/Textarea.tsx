@@ -1,6 +1,13 @@
 "use client";
 
-import { forwardRef, type TextareaHTMLAttributes } from "react";
+import {
+  type ChangeEvent,
+  forwardRef,
+  type TextareaHTMLAttributes,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { tv, type VariantProps } from "tailwind-variants";
 import { cn } from "@/lib/utils";
 
@@ -21,8 +28,10 @@ export const textareaVariants = tv({
     variant: {
       default: "border-border focus-visible:border-primary",
       filled: "border-transparent bg-muted focus-visible:bg-input focus-visible:border-primary",
-      flushed: "rounded-none border-x-0 border-t-0 border-b-2 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
-      unstyled: "border-transparent bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+      flushed:
+        "rounded-none border-x-0 border-t-0 border-b-2 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
+      unstyled:
+        "border-transparent bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0",
     },
     state: {
       default: "",
@@ -70,6 +79,12 @@ export interface TextareaProps
   showCount?: boolean;
   /** Maximum character count */
   maxLength?: number;
+  /** Auto-resize textarea based on content */
+  autoResize?: boolean;
+  /** Minimum rows when auto-resizing */
+  minRows?: number;
+  /** Maximum rows when auto-resizing */
+  maxRows?: number;
 }
 
 // ============================================================================
@@ -94,17 +109,72 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       disabled,
       value,
       defaultValue,
+      onChange,
       id,
+      autoResize = false,
+      minRows = 3,
+      maxRows = 10,
       ...props
     },
-    ref
+    ref,
   ) => {
+    // Track internal value for uncontrolled inputs
+    const [internalValue, setInternalValue] = useState(defaultValue ?? "");
+    const internalRef = useRef<HTMLTextAreaElement>(null);
+    const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
+
+    // Determine if controlled or uncontrolled
+    const isControlled = value !== undefined;
+    const currentValue = isControlled ? value : internalValue;
+
+    // Auto-resize function
+    const resizeTextarea = () => {
+      if (!autoResize || !textareaRef.current) return;
+
+      const textarea = textareaRef.current;
+      const computedStyle = window.getComputedStyle(textarea);
+      const lineHeight = Number.parseInt(computedStyle.lineHeight, 10) || 20;
+      const paddingTop = Number.parseInt(computedStyle.paddingTop, 10) || 0;
+      const paddingBottom = Number.parseInt(computedStyle.paddingBottom, 10) || 0;
+      const borderTop = Number.parseInt(computedStyle.borderTopWidth, 10) || 0;
+      const borderBottom = Number.parseInt(computedStyle.borderBottomWidth, 10) || 0;
+
+      const minHeight =
+        lineHeight * minRows + paddingTop + paddingBottom + borderTop + borderBottom;
+      const maxHeight =
+        lineHeight * maxRows + paddingTop + paddingBottom + borderTop + borderBottom;
+
+      // Reset height to measure scrollHeight
+      textarea.style.height = "auto";
+
+      // Calculate new height
+      const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight);
+      textarea.style.height = `${newHeight}px`;
+
+      // Show scrollbar if content exceeds maxHeight
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+    };
+
+    // Initial resize on mount
+    useEffect(() => {
+      resizeTextarea();
+    });
+
+    // Handle onChange with resize
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+      if (!isControlled) {
+        setInternalValue(e.target.value);
+      }
+      onChange?.(e);
+      resizeTextarea();
+    };
+
     // Derive state from error
     const derivedState = error ? "error" : state;
     const textareaId = id || props.name;
 
-    // Character count
-    const charCount = typeof value === "string" ? value.length : 0;
+    // Character count - works for both controlled and uncontrolled
+    const charCount = typeof currentValue === "string" ? currentValue.length : 0;
 
     return (
       <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full", containerClassName)}>
@@ -112,10 +182,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className={cn(
-              "text-sm font-medium text-foreground",
-              disabled && "opacity-50"
-            )}
+            className={cn("font-medium text-foreground text-sm", disabled && "opacity-50")}
           >
             {label}
             {required && <span className="ml-1 text-destructive">*</span>}
@@ -124,15 +191,21 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
         {/* Textarea */}
         <textarea
-          ref={ref}
+          ref={textareaRef}
           id={textareaId}
           disabled={disabled}
-          value={value}
-          defaultValue={defaultValue}
+          value={isControlled ? value : undefined}
+          defaultValue={!isControlled ? defaultValue : undefined}
+          onChange={handleChange}
           maxLength={maxLength}
           className={cn(
-            textareaVariants({ variant, state: derivedState, resize, fullWidth }),
-            className
+            textareaVariants({
+              variant,
+              state: derivedState,
+              resize: autoResize ? "none" : resize,
+              fullWidth,
+            }),
+            className,
           )}
           {...props}
         />
@@ -141,12 +214,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div className="flex items-center justify-between gap-2">
           {/* Error or helper text */}
           {(error || helperText) && (
-            <p
-              className={cn(
-                "text-xs",
-                error ? "text-destructive" : "text-muted-foreground"
-              )}
-            >
+            <p className={cn("text-xs", error ? "text-destructive" : "text-muted-foreground")}>
               {error || helperText}
             </p>
           )}
@@ -155,8 +223,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {showCount && maxLength && (
             <p
               className={cn(
-                "ml-auto text-xs text-muted-foreground",
-                charCount >= maxLength && "text-destructive"
+                "ml-auto text-muted-foreground text-xs",
+                charCount >= maxLength && "text-destructive",
               )}
             >
               {charCount}/{maxLength}
@@ -165,7 +233,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 Textarea.displayName = "Textarea";

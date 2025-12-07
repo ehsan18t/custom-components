@@ -1,9 +1,10 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { forwardRef, useRef, type ButtonHTMLAttributes } from "react";
+import { Slot } from "@radix-ui/react-slot";
+import React, { type ButtonHTMLAttributes, forwardRef } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
+import type { ClickEffect, FocusEffect, HoverEffect } from "@/context";
+import { type ButtonAnimationOptions, useButtonAnimation } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -14,37 +15,52 @@ export const buttonVariants = tv({
   base: [
     "inline-flex items-center justify-center gap-2",
     "font-medium whitespace-nowrap",
-    "rounded-md transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    "rounded-md",
+    // Smooth transitions for colors, shadows, borders
+    "transition-all duration-200 ease-out",
+    // Disabled state
     "disabled:pointer-events-none disabled:opacity-50",
-    "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    // Icon sizing within button
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0",
+    // GPU acceleration to prevent text blur during transforms
+    "transform-gpu will-change-transform",
   ],
   variants: {
     variant: {
-      primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-      success: "bg-success text-success-foreground hover:bg-success/90",
-      warning: "bg-warning text-warning-foreground hover:bg-warning/90",
-      outline: "border border-border bg-transparent hover:bg-accent hover:text-accent-foreground",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      link: "text-primary underline-offset-4 hover:underline",
+      primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
+      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
+      success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
+      warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm",
+      outline: [
+        "border-2 border-border bg-transparent",
+        "hover:bg-accent/10 hover:border-accent",
+        "text-foreground",
+      ],
+      ghost: ["bg-transparent", "hover:bg-muted", "text-foreground"],
+      link: ["bg-transparent text-primary", "underline-offset-4 hover:underline", "p-0 h-auto"],
     },
     size: {
-      sm: "h-8 px-3 text-xs",
-      md: "h-10 px-4 text-sm",
-      lg: "h-12 px-6 text-base",
-      xl: "h-14 px-8 text-lg",
-      icon: "h-10 w-10",
-      "icon-sm": "h-8 w-8",
-      "icon-lg": "h-12 w-12",
+      xs: "h-7 px-2 text-xs [&_svg]:size-3",
+      sm: "h-8 px-3 text-xs [&_svg]:size-3.5",
+      md: "h-10 px-4 text-sm [&_svg]:size-4",
+      lg: "h-12 px-6 text-base [&_svg]:size-5",
+      xl: "h-14 px-8 text-lg [&_svg]:size-6",
+    },
+    iconSize: {
+      xs: "size-7 p-0",
+      sm: "size-8 p-0",
+      md: "size-10 p-0",
+      lg: "size-12 p-0",
+      xl: "size-14 p-0",
     },
     fullWidth: {
       true: "w-full",
     },
     rounded: {
-      default: "rounded-md",
+      none: "rounded-none",
       sm: "rounded-sm",
+      default: "rounded-md",
       lg: "rounded-lg",
       xl: "rounded-xl",
       full: "rounded-full",
@@ -63,41 +79,59 @@ export const buttonVariants = tv({
 
 export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+    VariantProps<typeof buttonVariants>,
+    Omit<ButtonAnimationOptions, "disabled" | "isLoading"> {
+  /** Render as child element (polymorphism) */
+  asChild?: boolean;
+  /** Icon-only button (uses iconSize instead of size) */
+  iconOnly?: boolean;
   /** Show loading spinner */
   isLoading?: boolean;
   /** Loading text (replaces children when loading) */
   loadingText?: string;
+  /** Custom loading spinner */
+  loadingSpinner?: React.ReactNode;
+  /** Spinner position when loading */
+  spinnerPlacement?: "start" | "end";
   /** Icon to show before children */
   leftIcon?: React.ReactNode;
   /** Icon to show after children */
   rightIcon?: React.ReactNode;
-  /** Enable GSAP hover animation */
+  // Animation props (from ButtonAnimationOptions)
+  /** Animation preset: subtle, playful, material, minimal, none */
+  preset?: string;
+  /** Enable/disable animations */
   animated?: boolean;
-  /** Animation scale on hover (0-1) */
+  /** Hover effect type */
+  hoverEffect?: HoverEffect;
+  /** Click effect type */
+  clickEffect?: ClickEffect;
+  /** Focus effect type */
+  focusEffect?: FocusEffect;
+  /** Hover scale factor */
   hoverScale?: number;
+  /** Press scale factor */
+  pressScale?: number;
+  /** Animation duration */
+  duration?: number | "fast" | "default" | "slow";
+  /** Animation easing */
+  easing?: "default" | "bounce" | "smooth" | string;
 }
 
 // ============================================================================
 // Loading Spinner
 // ============================================================================
 
-function LoadingSpinner({ className }: { className?: string }) {
+function DefaultSpinner({ className }: { className?: string }) {
   return (
     <svg
       className={cn("animate-spin", className)}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
+      aria-hidden="true"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"
@@ -117,113 +151,120 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className,
       variant,
       size,
+      iconSize,
       fullWidth,
       rounded,
+      asChild = false,
+      iconOnly = false,
       isLoading = false,
       loadingText,
+      loadingSpinner,
+      spinnerPlacement = "start",
       leftIcon,
       rightIcon,
-      animated = true,
-      hoverScale = 1.02,
       disabled,
       children,
+      onClick,
+      // Animation props
+      preset = "subtle",
+      animated,
+      hoverEffect,
+      clickEffect,
+      focusEffect,
+      hoverScale,
+      pressScale,
+      duration,
+      easing,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    const isDisabled = disabled || isLoading;
+    const Comp = asChild ? Slot : "button";
 
-    // Merge refs
-    const mergedRef = (node: HTMLButtonElement) => {
-      buttonRef.current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        ref.current = node;
+    // Use the animation hook
+    const {
+      mergedRef,
+      handleClick: animationClick,
+      focusClasses,
+      containerClasses,
+    } = useButtonAnimation<HTMLButtonElement>(
+      {
+        preset,
+        animated,
+        hoverEffect,
+        clickEffect,
+        focusEffect,
+        hoverScale,
+        pressScale,
+        duration,
+        easing,
+        disabled: isDisabled,
+        isLoading,
+      },
+      ref,
+    );
+
+    // Combined click handler
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isDisabled) {
+        event.preventDefault();
+        return;
       }
+      animationClick(event);
+      onClick?.(event);
     };
 
-    // GSAP hover animation
-    useGSAP(
-      () => {
-        if (!buttonRef.current || !animated || disabled || isLoading) return;
+    // Determine size class
+    const sizeClass = iconOnly ? undefined : size;
+    const iconSizeClass = iconOnly ? (iconSize ?? size ?? "md") : undefined;
 
-        const button = buttonRef.current;
+    // Spinner element
+    const spinner = loadingSpinner ?? <DefaultSpinner className="size-4" />;
 
-        const handleMouseEnter = () => {
-          gsap.to(button, {
-            scale: hoverScale,
-            duration: 0.2,
-            ease: "power2.out",
-          });
-        };
-
-        const handleMouseLeave = () => {
-          gsap.to(button, {
-            scale: 1,
-            duration: 0.2,
-            ease: "power2.out",
-          });
-        };
-
-        const handleMouseDown = () => {
-          gsap.to(button, {
-            scale: 0.98,
-            duration: 0.1,
-            ease: "power2.out",
-          });
-        };
-
-        const handleMouseUp = () => {
-          gsap.to(button, {
-            scale: hoverScale,
-            duration: 0.1,
-            ease: "power2.out",
-          });
-        };
-
-        button.addEventListener("mouseenter", handleMouseEnter);
-        button.addEventListener("mouseleave", handleMouseLeave);
-        button.addEventListener("mousedown", handleMouseDown);
-        button.addEventListener("mouseup", handleMouseUp);
-
-        return () => {
-          button.removeEventListener("mouseenter", handleMouseEnter);
-          button.removeEventListener("mouseleave", handleMouseLeave);
-          button.removeEventListener("mousedown", handleMouseDown);
-          button.removeEventListener("mouseup", handleMouseUp);
-        };
-      },
-      { dependencies: [animated, disabled, isLoading, hoverScale] }
+    // For asChild, just pass through the children directly
+    // (icons and loading state are not supported with asChild)
+    const content = asChild ? (
+      children
+    ) : isLoading ? (
+      <>
+        {spinnerPlacement === "start" && spinner}
+        {loadingText && <span>{loadingText}</span>}
+        {spinnerPlacement === "end" && spinner}
+      </>
+    ) : (
+      <>
+        {leftIcon}
+        {children}
+        {rightIcon}
+      </>
     );
-
-    const isDisabled = disabled || isLoading;
 
     return (
-      <button
+      <Comp
         ref={mergedRef}
         className={cn(
-          buttonVariants({ variant, size, fullWidth, rounded }),
-          className
+          buttonVariants({
+            variant,
+            size: sizeClass,
+            iconSize: iconSizeClass,
+            fullWidth,
+            rounded,
+          }),
+          focusClasses,
+          containerClasses,
+          className,
         )}
         disabled={isDisabled}
+        onClick={handleClick}
+        aria-disabled={isDisabled}
+        aria-busy={isLoading}
         {...props}
       >
-        {isLoading ? (
-          <>
-            <LoadingSpinner className="size-4" />
-            {loadingText && <span>{loadingText}</span>}
-          </>
-        ) : (
-          <>
-            {leftIcon}
-            {children}
-            {rightIcon}
-          </>
-        )}
-      </button>
+        {content}
+      </Comp>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

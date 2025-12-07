@@ -232,3 +232,167 @@ html[data-theme="dark"] {
   border-radius: 8px;
   transition: background-color 0.2s ease;
 }
+
+/* ============================================================================
+ * Custom Component Animation Utilities
+ * Prefixed with "cc-" (custom components) to avoid conflicts
+ * ============================================================================ */
+
+/* === Ripple Effect === */
+@keyframes cc-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+.cc-ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.cc-ripple {
+  position: absolute;
+  pointer-events: none;
+  background: currentColor;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: cc-ripple 0.6s ease-out forwards;
+}
+
+/* === Shine Effect === */
+@keyframes cc-shine {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+.cc-shine-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.cc-shine-container::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 50%;
+  height: 100%;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.2), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+}
+
+.cc-shine-container:hover::before {
+  animation: cc-shine 0.75s ease-in-out;
+}
+
+/* === Glow Effect === */
+.cc-glow {
+  transition: box-shadow var(--animation-duration) var(--animation-timing);
+}
+
+.cc-glow:hover {
+  box-shadow: 0 0 20px oklch(from var(--primary) l c h / 0.4);
+}
+
+.cc-glow-focus:focus-visible {
+  box-shadow: 0 0 0 3px oklch(from var(--ring) l c h / 0.3);
+}
+
+/* === Focus Ring Utilities === */
+.cc-focus-ring:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.cc-focus-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px oklch(from var(--ring) l c h / 0.25);
+}
+
+.cc-focus-outline:focus-visible {
+  outline: 2px solid var(--border);
+  outline-offset: 2px;
+}
+
+/* === Pulse Animation === */
+@keyframes cc-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.cc-pulse {
+  animation: cc-pulse 0.3s ease-in-out;
+}
+
+/* === Bounce Animation === */
+@keyframes cc-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-2px);
+  }
+}
+
+.cc-bounce {
+  animation: cc-bounce 0.4s ease-in-out;
+}
+
+/* === Press Animation === */
+@keyframes cc-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cc-press {
+  animation: cc-press 0.2s ease-in-out;
+}
+
+/* === Magnetic Container === */
+.cc-magnetic {
+  transition: transform 0.15s ease-out;
+}
+
+/* === Respect Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+  .cc-ripple,
+  .cc-shine-container::before,
+  .cc-pulse,
+  .cc-bounce,
+  .cc-press,
+  .cc-magnetic,
+  .cc-glow {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,13 +1,15 @@
 // GSAP Hooks
-export { useGsapContext, gsap, ScrollTrigger, useGSAP } from "./useGsapContext";
-export { useAnimateOnMount } from "./useAnimateOnMount";
-export { useScrollTrigger } from "./useScrollTrigger";
-export { useReducedMotion } from "./useReducedMotion";
 
+export type { AnimateOnMountOptions, AnimationType } from "./useAnimateOnMount";
+export { useAnimateOnMount } from "./useAnimateOnMount";
+export type { ButtonAnimationOptions, ButtonAnimationReturn } from "./useButtonAnimation";
+export { useButtonAnimation } from "./useButtonAnimation";
 // Types
 export type { GsapContextOptions, GsapContextReturn } from "./useGsapContext";
-export type { AnimationType, AnimateOnMountOptions } from "./useAnimateOnMount";
+export { gsap, ScrollTrigger, useGSAP, useGsapContext } from "./useGsapContext";
+export { useReducedMotion } from "./useReducedMotion";
 export type {
   ScrollAnimationType,
   ScrollTriggerOptions,
 } from "./useScrollTrigger";
+export { useScrollTrigger } from "./useScrollTrigger";

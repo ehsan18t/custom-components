@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, useState, type InputHTMLAttributes } from "react";
+import { Eye, EyeOff, X } from "lucide-react";
+import { type ChangeEvent, forwardRef, type InputHTMLAttributes, useRef, useState } from "react";
 import { tv, type VariantProps } from "tailwind-variants";
 import { cn } from "@/lib/utils";
 
@@ -21,8 +22,10 @@ export const inputVariants = tv({
     variant: {
       default: "border-border focus-visible:border-primary",
       filled: "border-transparent bg-muted focus-visible:bg-input focus-visible:border-primary",
-      flushed: "rounded-none border-x-0 border-t-0 border-b-2 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
-      unstyled: "border-transparent bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+      flushed:
+        "rounded-none border-x-0 border-t-0 border-b-2 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary",
+      unstyled:
+        "border-transparent bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0",
     },
     inputSize: {
       sm: "h-8 text-xs",
@@ -69,6 +72,14 @@ export interface InputProps
   required?: boolean;
   /** Container className */
   containerClassName?: string;
+  /** Show clear button when input has value */
+  clearable?: boolean;
+  /** Callback when clear button is clicked */
+  onClear?: () => void;
+  /** Prefix text to show before input (e.g., "$", "https://") */
+  prefix?: string;
+  /** Suffix text to show after input (e.g., ".com", "kg") */
+  suffix?: string;
 }
 
 // ============================================================================
@@ -93,18 +104,60 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       type = "text",
       id,
       disabled,
+      clearable,
+      onClear,
+      value,
+      defaultValue,
+      onChange,
+      prefix,
+      suffix,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [showPassword, setShowPassword] = useState(false);
+    const [internalValue, setInternalValue] = useState(defaultValue ?? "");
+    const internalRef = useRef<HTMLInputElement>(null);
+    const inputRef = (ref as React.RefObject<HTMLInputElement>) || internalRef;
+
     const isPassword = type === "password";
     const inputType = isPassword && showPassword ? "text" : type;
+
+    // Determine if controlled or uncontrolled
+    const isControlled = value !== undefined;
+    const currentValue = isControlled ? value : internalValue;
+    const hasValue = currentValue !== "" && currentValue !== undefined;
+
+    // Handle onChange for uncontrolled inputs
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      if (!isControlled) {
+        setInternalValue(e.target.value);
+      }
+      onChange?.(e);
+    };
+
+    // Handle clear
+    const handleClear = () => {
+      if (!isControlled) {
+        setInternalValue("");
+        // Update the actual input element
+        if (inputRef.current) {
+          inputRef.current.value = "";
+          inputRef.current.focus();
+        }
+      }
+      onClear?.();
+    };
 
     // Derive state from error
     const derivedState = error ? "error" : state;
 
     const inputId = id || props.name;
+
+    // Determine right side padding
+    const hasRightContent = rightIcon || isPassword || (clearable && hasValue);
+    const rightContentCount =
+      (rightIcon ? 1 : 0) + (isPassword ? 1 : 0) + (clearable && hasValue ? 1 : 0);
 
     return (
       <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full", containerClassName)}>
@@ -112,121 +165,141 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className={cn(
-              "text-sm font-medium text-foreground",
-              disabled && "opacity-50"
-            )}
+            className={cn("font-medium text-foreground text-sm", disabled && "opacity-50")}
           >
             {label}
             {required && <span className="ml-1 text-destructive">*</span>}
           </label>
         )}
 
-        {/* Input wrapper */}
-        <div className="relative">
-          {/* Left icon */}
-          {leftIcon && (
-            <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              {leftIcon}
-            </div>
+        {/* Input wrapper with prefix/suffix addons */}
+        <div
+          className={cn(
+            "relative flex",
+            (prefix || suffix) && [
+              "overflow-hidden rounded-md border border-input bg-background",
+              "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+              derivedState === "error" && "border-destructive",
+              derivedState === "success" && "border-success",
+              disabled && "opacity-50",
+            ],
+          )}
+        >
+          {/* Prefix addon */}
+          {prefix && (
+            <span
+              className={cn(
+                "flex shrink-0 select-none items-center border-input border-r bg-muted px-3 text-muted-foreground text-sm",
+                disabled && "opacity-50",
+              )}
+            >
+              {prefix}
+            </span>
           )}
 
-          {/* Input */}
-          <input
-            ref={ref}
-            id={inputId}
-            type={inputType}
-            disabled={disabled}
-            className={cn(
-              inputVariants({ variant, inputSize, state: derivedState, fullWidth }),
-              leftIcon && "pl-10",
-              (rightIcon || isPassword) && "pr-10",
-              className
+          {/* Inner input container */}
+          <div className="relative flex-1">
+            {/* Left icon */}
+            {leftIcon && (
+              <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 text-muted-foreground">
+                {leftIcon}
+              </div>
             )}
-            {...props}
-          />
 
-          {/* Right icon or password toggle */}
-          {(rightIcon || isPassword) && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {isPassword ? (
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="size-4" />
-                  ) : (
-                    <EyeIcon className="size-4" />
-                  )}
-                </button>
-              ) : (
-                <span className="text-muted-foreground">{rightIcon}</span>
+            {/* Input */}
+            <input
+              ref={inputRef}
+              id={inputId}
+              type={inputType}
+              disabled={disabled}
+              value={isControlled ? value : undefined}
+              defaultValue={!isControlled ? defaultValue : undefined}
+              onChange={handleChange}
+              className={cn(
+                // When prefix/suffix present, remove border styles as wrapper handles them
+                prefix || suffix
+                  ? [
+                      "h-10 w-full bg-transparent px-3 py-2 text-sm",
+                      "placeholder:text-muted-foreground",
+                      "focus:outline-none",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    ]
+                  : inputVariants({ variant, inputSize, state: derivedState, fullWidth }),
+                leftIcon && "pl-10",
+                hasRightContent && rightContentCount === 1 && "pr-10",
+                hasRightContent && rightContentCount === 2 && "pr-16",
+                hasRightContent && rightContentCount >= 3 && "pr-22",
+                className,
               )}
-            </div>
+              {...props}
+            />
+
+            {/* Right side content: clear button, password toggle, right icon */}
+            {hasRightContent && (
+              <div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-1.5">
+                {/* Clear button */}
+                {clearable && hasValue && !disabled && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    tabIndex={-1}
+                    aria-label="Clear input"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                )}
+
+                {/* Password toggle */}
+                {isPassword && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    tabIndex={-1}
+                    aria-pressed={showPassword}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                )}
+
+                {/* Right icon */}
+                {rightIcon && !isPassword && (
+                  <span className="text-muted-foreground">{rightIcon}</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Suffix addon */}
+          {suffix && (
+            <span
+              className={cn(
+                "flex shrink-0 select-none items-center border-input border-l bg-muted px-3 text-muted-foreground text-sm",
+                disabled && "opacity-50",
+              )}
+            >
+              {suffix}
+            </span>
           )}
         </div>
 
         {/* Error or helper text */}
         {(error || helperText) && (
-          <p
-            className={cn(
-              "text-xs",
-              error ? "text-destructive" : "text-muted-foreground"
-            )}
-          >
+          <p className={cn("text-xs", error ? "text-destructive" : "text-muted-foreground")}>
             {error || helperText}
           </p>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";
-
-// ============================================================================
-// Icons (inline to avoid dependencies)
-// ============================================================================
-
-function EyeIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function EyeOffIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-      <path d="m2 2 20 20" />
-    </svg>
-  );
-}
 
 export default Input;
