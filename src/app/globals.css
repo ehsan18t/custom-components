@@ -1,0 +1,82 @@
+/* Tailwind CSS */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@layer base {
+  :root,
+  [data-theme="light"] {
+    /* Colors */
+    --primary: oklch(0.6397 0.172 36.4421);
+    --background: oklch(0.9383 0.0042 236.4993);
+
+    /* Scrollbar */
+    --scroll-bg: var(--background);
+    --scroll-main: var(--primary);
+
+    /* Progress bar */
+    --progress-color: var(--background);
+  }
+
+  [data-theme="dark"],
+  .dark {
+    --primary: oklch(0.6397 0.172 36.4421);
+    --background: oklch(0.2598 0.0306 262.6666);
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-sans, Inter, sans-serif);
+  --font-mono: var(--font-mono, "JetBrains Mono", monospace);
+  --font-serif: var(--font-serif, Georgia, serif);
+  --font-Kode-Mono: var(--font-kode-mono, "Kode Mono", monospace);
+
+  --color-background: var(--background);
+  --color-primary: var(--primary);
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant hover (&:hover);
+
+/* Theme transition - smooth color changes when switching themes */
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* Custom Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-main) var(--scroll-bg);
+  scroll-behavior: smooth;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  margin: 4px 0;
+  background: var(--scroll-bg);
+  border-radius: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-main);
+  border: 3px solid var(--scroll-bg);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
