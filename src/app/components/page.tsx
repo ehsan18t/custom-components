@@ -305,14 +305,13 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Inputs"
-          description="Beautiful inputs with subtle shadows, clearable functionality, prefix/suffix support, and smooth focus states."
+          description="Beautiful inputs with GSAP-animated floating labels, smooth focus transitions, and elegant validation states."
         >
           <div className="grid gap-8 lg:grid-cols-2">
-            <DemoGroup title="Basic Variants">
+            <DemoGroup title="Floating Label (Default)">
               <div className="space-y-4">
                 <Input
                   label="Default Input"
-                  placeholder="Enter text..."
                   value={inputValue}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setInputValue(e.target.value)
@@ -405,16 +404,16 @@ export default function ComponentsPage() {
               </div>
             </DemoGroup>
 
-            <DemoGroup title="Sizes & Variants">
+            <DemoGroup title="Sizes & Styles">
               <div className="space-y-4">
-                <Input inputSize="sm" label="Small Input" placeholder="Small size" />
-                <Input inputSize="md" label="Medium Input" placeholder="Medium size (default)" />
-                <Input inputSize="lg" label="Large Input" placeholder="Large size" />
+                <Input inputSize="sm" label="Small Input" />
+                <Input inputSize="md" label="Medium Input" />
+                <Input inputSize="lg" label="Large Input" />
                 <Input
-                  label="Ghost Variant"
-                  variant="ghost"
-                  placeholder="Ghost style input"
-                  helperText="Minimal styling until focused"
+                  label="Non-floating Label"
+                  floatingLabel={false}
+                  placeholder="With static label above"
+                  helperText="Set floatingLabel={false} for static labels"
                 />
               </div>
             </DemoGroup>
@@ -426,15 +425,16 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Textarea"
-          description="Feature-rich textarea with auto-resize, character count, and validation states."
+          description="Feature-rich textarea with GSAP-animated floating labels, auto-resize, character count, and elegant validation states."
         >
           <div className="grid gap-8 lg:grid-cols-2">
-            <DemoGroup title="Basic">
+            <DemoGroup title="Floating Label (Default)">
               <Textarea
                 label="Message"
-                placeholder="Type your message..."
                 value={textareaValue}
-                onChange={(e) => setTextareaValue(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setTextareaValue(e.target.value)
+                }
                 showCount
                 maxLength={200}
                 helperText="Max 200 characters"
@@ -444,9 +444,10 @@ export default function ComponentsPage() {
             <DemoGroup title="Auto-Resize">
               <Textarea
                 label="Auto-expanding Textarea"
-                placeholder="Start typing... the textarea will grow!"
                 value={autoResizeValue}
-                onChange={(e) => setAutoResizeValue(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setAutoResizeValue(e.target.value)
+                }
                 autoResize
                 minRows={2}
                 maxRows={8}
@@ -456,9 +457,9 @@ export default function ComponentsPage() {
 
             <DemoGroup title="Variants">
               <div className="space-y-4">
-                <Textarea variant="default" placeholder="Default variant" rows={2} />
-                <Textarea variant="filled" placeholder="Filled variant" rows={2} />
-                <Textarea variant="flushed" placeholder="Flushed variant" rows={2} />
+                <Textarea variant="default" label="Default Variant" rows={2} />
+                <Textarea variant="filled" label="Filled Variant" rows={2} />
+                <Textarea variant="flushed" label="Flushed Variant" rows={2} />
               </div>
             </DemoGroup>
 

@@ -20,76 +20,78 @@ import { cn } from "@/lib/utils";
 
 export const inputVariants = tv({
   base: [
-    "flex h-10 w-full rounded-lg border bg-background px-3 py-2",
-    "text-sm text-foreground placeholder:text-muted-foreground/50",
-    "transition-all duration-200 ease-out",
-    "focus:outline-none",
+    "peer w-full rounded-xl border-2 bg-transparent px-4 pt-5 pb-2",
+    "text-foreground text-sm",
+    "outline-none",
+    "transition-[border-color,box-shadow] duration-300 ease-out",
     "disabled:cursor-not-allowed disabled:opacity-50",
     "file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm",
   ],
   variants: {
     variant: {
       default: [
-        "border-border/60 bg-background",
-        "hover:border-border",
-        "focus:border-primary focus:ring-2 focus:ring-primary/20",
+        "border-border/40 bg-background/50",
+        "hover:border-border/80",
+        "focus:border-primary focus:bg-background",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
       filled: [
-        "border-transparent bg-muted/50",
-        "hover:bg-muted/70",
-        "focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20",
+        "border-transparent bg-muted/60",
+        "hover:bg-muted/80",
+        "focus:border-primary focus:bg-background",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
-      ghost: [
-        "border-transparent bg-transparent",
-        "hover:bg-muted/50",
-        "focus:bg-muted/30 focus:ring-2 focus:ring-primary/20",
+      outlined: [
+        "border-border bg-transparent",
+        "hover:border-foreground/50",
+        "focus:border-primary",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
       flushed: [
-        "rounded-none border-x-0 border-t-0 border-b-2 border-border/60 bg-transparent px-0",
-        "hover:border-border",
-        "focus:border-primary focus:ring-0",
+        "rounded-none border-x-0 border-t-0 border-b-2 border-border/60 bg-transparent px-0 pt-4 pb-2",
+        "hover:border-foreground/50",
+        "focus:border-primary focus:shadow-none",
       ],
     },
     inputSize: {
-      sm: "h-8 px-2.5 text-xs",
-      md: "h-10 px-3 text-sm",
-      lg: "h-12 px-4 text-base",
+      sm: "pt-4 pb-1.5 text-xs",
+      md: "pt-5 pb-2 text-sm",
+      lg: "pt-6 pb-2.5 text-base",
     },
     state: {
       default: "",
       error: [
         "border-destructive/60",
         "hover:border-destructive",
-        "focus:border-destructive focus:ring-destructive/20",
+        "focus:border-destructive focus:shadow-[0_0_0_4px_hsl(var(--destructive)/0.1)]",
       ],
       success: [
         "border-success/60",
         "hover:border-success",
-        "focus:border-success focus:ring-success/20",
+        "focus:border-success focus:shadow-[0_0_0_4px_hsl(var(--success)/0.1)]",
       ],
       warning: [
         "border-warning/60",
         "hover:border-warning",
-        "focus:border-warning focus:ring-warning/20",
+        "focus:border-warning focus:shadow-[0_0_0_4px_hsl(var(--warning)/0.1)]",
       ],
     },
   },
   compoundVariants: [
-    // Flushed state styles
     {
       variant: "flushed",
       state: "error",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
     {
       variant: "flushed",
       state: "success",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
     {
       variant: "flushed",
       state: "warning",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
   ],
   defaultVariants: {
@@ -114,7 +116,7 @@ export interface InputProps
   error?: string;
   /** Helper text to display below input */
   helperText?: string;
-  /** Label for the input */
+  /** Label for the input (also acts as placeholder when not focused) */
   label?: string;
   /** Whether the field is required */
   required?: boolean;
@@ -134,6 +136,8 @@ export interface InputProps
   showCount?: boolean;
   /** Animate shake on error */
   animateOnError?: boolean;
+  /** Use floating label (default: true) */
+  floatingLabel?: boolean;
 }
 
 // ============================================================================
@@ -170,6 +174,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       showCount,
       maxLength,
       animateOnError = true,
+      floatingLabel = true,
+      placeholder,
       ...props
     },
     ref,
@@ -179,6 +185,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const [isFocused, setIsFocused] = useState(false);
     const internalRef = useRef<HTMLInputElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const labelRef = useRef<HTMLLabelElement>(null);
     const inputRef = (ref as React.RefObject<HTMLInputElement>) || internalRef;
     const prevErrorRef = useRef<string | undefined>(error);
 
@@ -193,6 +200,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Derive state from error
     const derivedState = error ? "error" : state;
+
+    // Label should float when focused or has value
+    const shouldFloat = isFocused || hasValue || !!prefix;
 
     // Handle onChange for uncontrolled inputs
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -226,6 +236,34 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       onClear?.();
     };
 
+    // Floating label animation with GSAP
+    useGSAP(
+      () => {
+        if (!labelRef.current || !floatingLabel || !label) return;
+
+        const labelEl = labelRef.current;
+
+        if (shouldFloat) {
+          gsap.to(labelEl, {
+            y: -12,
+            scale: 0.75,
+            x: leftIcon ? -28 : 0,
+            duration: 0.25,
+            ease: "power2.out",
+          });
+        } else {
+          gsap.to(labelEl, {
+            y: 0,
+            scale: 1,
+            x: 0,
+            duration: 0.25,
+            ease: "power2.out",
+          });
+        }
+      },
+      { dependencies: [shouldFloat, floatingLabel, label, leftIcon] },
+    );
+
     // Shake animation on error
     useGSAP(
       () => {
@@ -235,15 +273,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         if (error && !prevErrorRef.current) {
           gsap.to(wrapperRef.current, {
             keyframes: [
-              { x: -6, duration: 0.05 },
-              { x: 6, duration: 0.05 },
-              { x: -4, duration: 0.05 },
-              { x: 4, duration: 0.05 },
-              { x: -2, duration: 0.05 },
-              { x: 2, duration: 0.05 },
-              { x: 0, duration: 0.05 },
+              { x: -8, duration: 0.06 },
+              { x: 8, duration: 0.06 },
+              { x: -6, duration: 0.06 },
+              { x: 6, duration: 0.06 },
+              { x: -3, duration: 0.06 },
+              { x: 3, duration: 0.06 },
+              { x: 0, duration: 0.06 },
             ],
-            ease: "power2.out",
+            ease: "power2.inOut",
           });
         }
         prevErrorRef.current = error;
@@ -253,9 +291,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const inputId = id || props.name;
 
-    // Determine if we have addons (prefix/suffix)
-    const hasAddons = prefix || suffix;
-
     // Determine right side elements
     const hasRightElements = rightIcon || isPassword || (clearable && hasValue);
     const rightElementsCount =
@@ -263,138 +298,36 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Calculate padding based on icons and addons
     const getPaddingClasses = () => {
-      if (hasAddons) return ""; // Addons handle their own spacing
-
-      const left = leftIcon ? "pl-10" : "pl-3";
-      let right = "pr-3";
-      if (rightElementsCount === 1) right = "pr-10";
-      else if (rightElementsCount === 2) right = "pr-16";
-      else if (rightElementsCount >= 3) right = "pr-22";
-      return `${left} ${right}`;
+      const leftPad = leftIcon ? "pl-11" : prefix ? "pl-14" : "pl-4";
+      let rightPad = "pr-4";
+      if (rightElementsCount === 1) rightPad = "pr-11";
+      else if (rightElementsCount === 2) rightPad = "pr-18";
+      else if (rightElementsCount >= 3) rightPad = "pr-24";
+      if (suffix) rightPad = "pr-14";
+      return `${leftPad} ${rightPad}`;
     };
 
-    // Size mappings for addon heights
-    const sizeHeightClass = {
-      sm: "h-8",
-      md: "h-10",
-      lg: "h-12",
+    // Get label color based on state
+    const getLabelColor = () => {
+      if (!shouldFloat) return "text-muted-foreground";
+      if (derivedState === "error") return "text-destructive";
+      if (derivedState === "success") return "text-success";
+      if (derivedState === "warning") return "text-warning";
+      if (isFocused) return "text-primary";
+      return "text-muted-foreground";
     };
-
-    // Render input with optional addons
-    const renderInput = () => (
-      <div className={cn("relative flex items-center", fullWidth && "w-full")}>
-        {/* Left icon */}
-        {leftIcon && !hasAddons && (
-          <div
-            className={cn(
-              "pointer-events-none absolute left-3 flex items-center justify-center",
-              "text-muted-foreground transition-colors duration-200",
-              isFocused && "text-foreground",
-              derivedState === "error" && "text-destructive",
-              derivedState === "success" && "text-success",
-            )}
-          >
-            {leftIcon}
-          </div>
-        )}
-
-        {/* Input element */}
-        <input
-          ref={inputRef}
-          id={inputId}
-          type={inputType}
-          disabled={disabled}
-          value={isControlled ? value : undefined}
-          defaultValue={!isControlled ? defaultValue : undefined}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          maxLength={maxLength}
-          className={cn(
-            inputVariants({ variant, inputSize, state: derivedState }),
-            getPaddingClasses(),
-            hasAddons &&
-              "rounded-none border-x-0 first:rounded-l-lg first:border-l last:rounded-r-lg last:border-r",
-            className,
-          )}
-          aria-invalid={derivedState === "error"}
-          aria-describedby={
-            error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
-          }
-          {...props}
-        />
-
-        {/* Right side elements */}
-        {hasRightElements && !hasAddons && (
-          <div className="absolute right-3 flex items-center gap-1.5">
-            {/* Clear button */}
-            {clearable && hasValue && !disabled && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className={cn(
-                  "flex items-center justify-center rounded-full p-0.5",
-                  "text-muted-foreground transition-all duration-150",
-                  "hover:bg-muted hover:text-foreground",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                tabIndex={-1}
-                aria-label="Clear input"
-              >
-                <X className="size-3.5" aria-hidden="true" />
-              </button>
-            )}
-
-            {/* Password toggle */}
-            {isPassword && (
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className={cn(
-                  "flex items-center justify-center rounded p-0.5",
-                  "text-muted-foreground transition-colors duration-150",
-                  "hover:text-foreground",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                tabIndex={-1}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="size-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-4" aria-hidden="true" />
-                )}
-              </button>
-            )}
-
-            {/* Right icon */}
-            {rightIcon && (
-              <span
-                className={cn(
-                  "text-muted-foreground transition-colors duration-200",
-                  isFocused && "text-foreground",
-                )}
-              >
-                {rightIcon}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    );
 
     return (
       <div
         ref={wrapperRef}
         className={cn("flex flex-col gap-1.5", fullWidth && "w-full", wrapperClassName)}
       >
-        {/* Label */}
-        {label && (
+        {/* Non-floating label */}
+        {label && !floatingLabel && (
           <label
             htmlFor={inputId}
             className={cn(
-              "font-medium text-foreground text-sm",
+              "font-medium text-foreground text-sm transition-colors duration-200",
               disabled && "cursor-not-allowed opacity-50",
             )}
           >
@@ -403,90 +336,177 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
 
-        {/* Input with optional prefix/suffix addons */}
-        {hasAddons ? (
-          <div
-            className={cn(
-              "flex items-stretch overflow-hidden rounded-lg border transition-all duration-200",
-              // Default border color
-              "border-border/60",
-              // Hover state
-              "hover:border-border",
-              // Focus state
-              isFocused && "border-primary ring-2 ring-primary/20",
-              // Error state
-              derivedState === "error" && "border-destructive/60 hover:border-destructive",
-              isFocused && derivedState === "error" && "border-destructive ring-destructive/20",
-              // Success state
-              derivedState === "success" && "border-success/60 hover:border-success",
-              isFocused && derivedState === "success" && "border-success ring-success/20",
-              // Warning state
-              derivedState === "warning" && "border-warning/60 hover:border-warning",
-              isFocused && derivedState === "warning" && "border-warning ring-warning/20",
-              // Disabled state
-              disabled && "opacity-50",
-            )}
-          >
-            {/* Prefix */}
-            {prefix && (
-              <span
-                className={cn(
-                  "flex shrink-0 select-none items-center border-border/60 border-r bg-muted/30 px-3",
-                  "text-muted-foreground text-sm",
-                  sizeHeightClass[inputSize ?? "md"],
-                )}
-              >
-                {prefix}
-              </span>
-            )}
-
-            {/* Input */}
-            <input
-              ref={inputRef}
-              id={inputId}
-              type={inputType}
-              disabled={disabled}
-              value={isControlled ? value : undefined}
-              defaultValue={!isControlled ? defaultValue : undefined}
-              onChange={handleChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              maxLength={maxLength}
+        {/* Input container */}
+        <div className="relative">
+          {/* Left icon */}
+          {leftIcon && (
+            <div
               className={cn(
-                "flex-1 border-none bg-background px-3 text-foreground text-sm",
-                "placeholder:text-muted-foreground/50",
-                "focus:outline-none",
-                "disabled:cursor-not-allowed",
-                sizeHeightClass[inputSize ?? "md"],
-                className,
+                "-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 z-10 flex items-center justify-center",
+                "transition-colors duration-200",
+                isFocused ? "text-primary" : "text-muted-foreground",
+                derivedState === "error" && "text-destructive",
+                derivedState === "success" && "text-success",
               )}
-              aria-invalid={derivedState === "error"}
-              aria-describedby={
-                error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
-              }
-              {...props}
-            />
+            >
+              {leftIcon}
+            </div>
+          )}
 
-            {/* Suffix */}
-            {suffix && (
-              <span
-                className={cn(
-                  "flex shrink-0 select-none items-center border-border/60 border-l bg-muted/30 px-3",
-                  "text-muted-foreground text-sm",
-                  sizeHeightClass[inputSize ?? "md"],
-                )}
-              >
-                {suffix}
-              </span>
+          {/* Prefix */}
+          {prefix && (
+            <span
+              className={cn(
+                "-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 z-10 select-none",
+                "text-muted-foreground text-sm transition-opacity duration-200",
+                shouldFloat ? "opacity-100" : "opacity-0",
+              )}
+            >
+              {prefix}
+            </span>
+          )}
+
+          {/* Input element */}
+          <input
+            ref={inputRef}
+            id={inputId}
+            type={inputType}
+            disabled={disabled}
+            value={isControlled ? value : undefined}
+            defaultValue={!isControlled ? defaultValue : undefined}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            maxLength={maxLength}
+            placeholder={floatingLabel ? undefined : placeholder}
+            className={cn(
+              inputVariants({ variant, inputSize, state: derivedState }),
+              getPaddingClasses(),
+              !floatingLabel && "pt-2 pb-2",
+              className,
             )}
-          </div>
-        ) : (
-          renderInput()
-        )}
+            aria-invalid={derivedState === "error"}
+            aria-describedby={
+              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+            }
+            {...props}
+          />
+
+          {/* Floating label */}
+          {floatingLabel && label && (
+            <label
+              ref={labelRef}
+              htmlFor={inputId}
+              className={cn(
+                "-translate-y-1/2 pointer-events-none absolute top-1/2 origin-left",
+                leftIcon ? "left-11" : "left-4",
+                "text-sm",
+                "will-change-transform",
+                getLabelColor(),
+                disabled && "opacity-50",
+              )}
+            >
+              {label}
+              {required && <span className="ml-0.5 text-destructive">*</span>}
+            </label>
+          )}
+
+          {/* Suffix */}
+          {suffix && (
+            <span
+              className={cn(
+                "-translate-y-1/2 pointer-events-none absolute top-1/2 right-4 z-10 select-none",
+                "text-muted-foreground text-sm transition-opacity duration-200",
+                shouldFloat ? "opacity-100" : "opacity-0",
+              )}
+            >
+              {suffix}
+            </span>
+          )}
+
+          {/* Right side elements */}
+          {hasRightElements && (
+            <div className="-translate-y-1/2 absolute top-1/2 right-4 flex items-center gap-2">
+              {/* Clear button */}
+              {clearable && hasValue && !disabled && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className={cn(
+                    "flex items-center justify-center rounded-full p-1",
+                    "bg-muted/50 text-muted-foreground",
+                    "transition-all duration-200",
+                    "hover:scale-110 hover:bg-muted hover:text-foreground",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "active:scale-95",
+                  )}
+                  tabIndex={-1}
+                  aria-label="Clear input"
+                >
+                  <X className="size-3" aria-hidden="true" />
+                </button>
+              )}
+
+              {/* Password toggle */}
+              {isPassword && (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={cn(
+                    "flex items-center justify-center rounded-lg p-1",
+                    "text-muted-foreground",
+                    "transition-all duration-200",
+                    "hover:bg-muted/50 hover:text-foreground",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                  tabIndex={-1}
+                  aria-pressed={showPassword}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="size-4" aria-hidden="true" />
+                  )}
+                </button>
+              )}
+
+              {/* Right icon */}
+              {rightIcon && (
+                <span
+                  className={cn(
+                    "transition-colors duration-200",
+                    isFocused ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {rightIcon}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Animated focus line for flushed variant */}
+          {variant === "flushed" && (
+            <span
+              className={cn(
+                "absolute bottom-0 left-0 h-0.5 w-full origin-center scale-x-0",
+                "transition-transform duration-300 ease-out",
+                isFocused && "scale-x-100",
+                derivedState === "error"
+                  ? "bg-destructive"
+                  : derivedState === "success"
+                    ? "bg-success"
+                    : derivedState === "warning"
+                      ? "bg-warning"
+                      : "bg-primary",
+              )}
+            />
+          )}
+        </div>
 
         {/* Error, helper text, and character count */}
         {(error || helperText || (showCount && maxLength)) && (
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 px-1">
             <div className="flex-1">
               {error && (
                 <p

@@ -20,33 +20,37 @@ import { cn } from "@/lib/utils";
 
 export const textareaVariants = tv({
   base: [
-    "flex min-h-[100px] w-full rounded-lg border bg-background px-3 py-2.5",
-    "text-sm text-foreground placeholder:text-muted-foreground/50",
-    "transition-all duration-200 ease-out",
-    "focus:outline-none",
+    "peer w-full rounded-xl border-2 bg-transparent px-4 pt-6 pb-3",
+    "text-foreground text-sm",
+    "outline-none",
+    "transition-[border-color,box-shadow] duration-300 ease-out",
     "disabled:cursor-not-allowed disabled:opacity-50",
+    "min-h-[120px]",
   ],
   variants: {
     variant: {
       default: [
-        "border-border/60 bg-background",
-        "hover:border-border",
-        "focus:border-primary focus:ring-2 focus:ring-primary/20",
+        "border-border/40 bg-background/50",
+        "hover:border-border/80",
+        "focus:border-primary focus:bg-background",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
       filled: [
-        "border-transparent bg-muted/50",
-        "hover:bg-muted/70",
-        "focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20",
+        "border-transparent bg-muted/60",
+        "hover:bg-muted/80",
+        "focus:border-primary focus:bg-background",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
-      ghost: [
-        "border-transparent bg-transparent",
-        "hover:bg-muted/50",
-        "focus:bg-muted/30 focus:ring-2 focus:ring-primary/20",
+      outlined: [
+        "border-border bg-transparent",
+        "hover:border-foreground/50",
+        "focus:border-primary",
+        "focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.1)]",
       ],
       flushed: [
-        "rounded-none border-x-0 border-t-0 border-b-2 border-border/60 bg-transparent px-0",
-        "hover:border-border",
-        "focus:border-primary focus:ring-0",
+        "rounded-none border-x-0 border-t-0 border-b-2 border-border/60 bg-transparent px-0 pt-5 pb-3",
+        "hover:border-foreground/50",
+        "focus:border-primary focus:shadow-none",
       ],
     },
     resize: {
@@ -60,36 +64,35 @@ export const textareaVariants = tv({
       error: [
         "border-destructive/60",
         "hover:border-destructive",
-        "focus:border-destructive focus:ring-destructive/20",
+        "focus:border-destructive focus:shadow-[0_0_0_4px_hsl(var(--destructive)/0.1)]",
       ],
       success: [
         "border-success/60",
         "hover:border-success",
-        "focus:border-success focus:ring-success/20",
+        "focus:border-success focus:shadow-[0_0_0_4px_hsl(var(--success)/0.1)]",
       ],
       warning: [
         "border-warning/60",
         "hover:border-warning",
-        "focus:border-warning focus:ring-warning/20",
+        "focus:border-warning focus:shadow-[0_0_0_4px_hsl(var(--warning)/0.1)]",
       ],
     },
   },
   compoundVariants: [
-    // Flushed state styles
     {
       variant: "flushed",
       state: "error",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
     {
       variant: "flushed",
       state: "success",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
     {
       variant: "flushed",
       state: "warning",
-      className: "focus:ring-0",
+      className: "focus:shadow-none",
     },
   ],
   defaultVariants: {
@@ -132,6 +135,8 @@ export interface TextareaProps
   fullWidth?: boolean;
   /** Animate shake on error */
   animateOnError?: boolean;
+  /** Use floating label (default: true) */
+  floatingLabel?: boolean;
 }
 
 // ============================================================================
@@ -164,6 +169,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       state,
       fullWidth = true,
       animateOnError = true,
+      floatingLabel = true,
+      placeholder,
       ...props
     },
     ref,
@@ -172,6 +179,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const [isFocused, setIsFocused] = useState(false);
     const internalRef = useRef<HTMLTextAreaElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const labelRef = useRef<HTMLLabelElement>(null);
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
     const prevErrorRef = useRef<string | undefined>(error);
 
@@ -182,6 +190,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     // Derive state from error
     const derivedState = error ? "error" : state;
+
+    // Label should float when focused or has value
+    const shouldFloat = isFocused || hasValue;
 
     // Auto-resize function
     const resizeTextarea = () => {
@@ -237,6 +248,32 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       onBlur?.(e);
     };
 
+    // Floating label animation with GSAP
+    useGSAP(
+      () => {
+        if (!labelRef.current || !floatingLabel || !label) return;
+
+        const labelEl = labelRef.current;
+
+        if (shouldFloat) {
+          gsap.to(labelEl, {
+            y: -14,
+            scale: 0.75,
+            duration: 0.25,
+            ease: "power2.out",
+          });
+        } else {
+          gsap.to(labelEl, {
+            y: 0,
+            scale: 1,
+            duration: 0.25,
+            ease: "power2.out",
+          });
+        }
+      },
+      { dependencies: [shouldFloat, floatingLabel, label] },
+    );
+
     // Shake animation on error
     useGSAP(
       () => {
@@ -245,15 +282,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         if (error && !prevErrorRef.current) {
           gsap.to(wrapperRef.current, {
             keyframes: [
-              { x: -6, duration: 0.05 },
-              { x: 6, duration: 0.05 },
-              { x: -4, duration: 0.05 },
-              { x: 4, duration: 0.05 },
-              { x: -2, duration: 0.05 },
-              { x: 2, duration: 0.05 },
-              { x: 0, duration: 0.05 },
+              { x: -8, duration: 0.06 },
+              { x: 8, duration: 0.06 },
+              { x: -6, duration: 0.06 },
+              { x: 6, duration: 0.06 },
+              { x: -3, duration: 0.06 },
+              { x: 3, duration: 0.06 },
+              { x: 0, duration: 0.06 },
             ],
-            ease: "power2.out",
+            ease: "power2.inOut",
           });
         }
         prevErrorRef.current = error;
@@ -264,21 +301,27 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const textareaId = id || props.name;
     const charCount = typeof currentValue === "string" ? currentValue.length : 0;
 
-    // Suppress unused variable warnings
-    void isFocused;
-    void hasValue;
+    // Get label color based on state
+    const getLabelColor = () => {
+      if (!shouldFloat) return "text-muted-foreground";
+      if (derivedState === "error") return "text-destructive";
+      if (derivedState === "success") return "text-success";
+      if (derivedState === "warning") return "text-warning";
+      if (isFocused) return "text-primary";
+      return "text-muted-foreground";
+    };
 
     return (
       <div
         ref={wrapperRef}
         className={cn("flex flex-col gap-1.5", fullWidth && "w-full", wrapperClassName)}
       >
-        {/* Label */}
-        {label && (
+        {/* Non-floating label */}
+        {label && !floatingLabel && (
           <label
             htmlFor={textareaId}
             className={cn(
-              "font-medium text-foreground text-sm",
+              "font-medium text-foreground text-sm transition-colors duration-200",
               disabled && "cursor-not-allowed opacity-50",
             )}
           >
@@ -287,35 +330,76 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </label>
         )}
 
-        {/* Textarea element */}
-        <textarea
-          ref={textareaRef}
-          id={textareaId}
-          disabled={disabled}
-          value={isControlled ? value : undefined}
-          defaultValue={!isControlled ? defaultValue : undefined}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          maxLength={maxLength}
-          className={cn(
-            textareaVariants({
-              variant,
-              resize: autoResize ? "none" : resize,
-              state: derivedState,
-            }),
-            className,
+        {/* Textarea container */}
+        <div className="relative">
+          {/* Textarea element */}
+          <textarea
+            ref={textareaRef}
+            id={textareaId}
+            disabled={disabled}
+            value={isControlled ? value : undefined}
+            defaultValue={!isControlled ? defaultValue : undefined}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            maxLength={maxLength}
+            placeholder={floatingLabel ? undefined : placeholder}
+            className={cn(
+              textareaVariants({
+                variant,
+                resize: autoResize ? "none" : resize,
+                state: derivedState,
+              }),
+              !floatingLabel && "pt-3 pb-3",
+              className,
+            )}
+            aria-invalid={derivedState === "error"}
+            aria-describedby={
+              error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
+            }
+            {...props}
+          />
+
+          {/* Floating label */}
+          {floatingLabel && label && (
+            <label
+              ref={labelRef}
+              htmlFor={textareaId}
+              className={cn(
+                "pointer-events-none absolute top-5 left-4 origin-left",
+                "text-sm",
+                "will-change-transform",
+                getLabelColor(),
+                disabled && "opacity-50",
+              )}
+            >
+              {label}
+              {required && <span className="ml-0.5 text-destructive">*</span>}
+            </label>
           )}
-          aria-invalid={derivedState === "error"}
-          aria-describedby={
-            error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
-          }
-          {...props}
-        />
+
+          {/* Animated focus line for flushed variant */}
+          {variant === "flushed" && (
+            <span
+              className={cn(
+                "absolute bottom-0 left-0 h-0.5 w-full origin-center scale-x-0",
+                "transition-transform duration-300 ease-out",
+                isFocused && "scale-x-100",
+                derivedState === "error"
+                  ? "bg-destructive"
+                  : derivedState === "success"
+                    ? "bg-success"
+                    : derivedState === "warning"
+                      ? "bg-warning"
+                      : "bg-primary",
+              )}
+            />
+          )}
+        </div>
 
         {/* Footer: Error/Helper text and character count */}
         {(error || helperText || (showCount && maxLength)) && (
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 px-1">
             <div className="flex-1">
               {error && (
                 <p
