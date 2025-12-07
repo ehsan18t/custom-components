@@ -1,6 +1,7 @@
 "use client";
 
 import { useGSAP } from "@gsap/react";
+import { Slot } from "@radix-ui/react-slot";
 import gsap from "gsap";
 import { ChevronDown } from "lucide-react";
 import {
@@ -116,6 +117,8 @@ export interface DropdownProps extends HTMLAttributes<HTMLDivElement> {
 export interface DropdownTriggerProps extends HTMLAttributes<HTMLButtonElement> {
   /** Whether to show chevron icon */
   showChevron?: boolean;
+  /** Render as child element instead of button */
+  asChild?: boolean;
 }
 
 export interface DropdownContentProps
@@ -204,7 +207,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
 Dropdown.displayName = "Dropdown";
 
 export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProps>(
-  ({ className, children, showChevron = true, ...props }, ref) => {
+  ({ className, children, showChevron = true, asChild = false, ...props }, ref) => {
     const { open, setOpen, triggerRef } = useDropdown();
     const styles = dropdownVariants();
 
@@ -227,10 +230,12 @@ export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProp
       }
     };
 
+    const Comp = asChild ? Slot : "button";
+
     return (
-      <button
+      <Comp
         ref={mergedRef}
-        type="button"
+        type={asChild ? undefined : "button"}
         className={cn(styles.trigger(), className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -239,13 +244,13 @@ export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProp
         {...props}
       >
         {children}
-        {showChevron && (
+        {showChevron && !asChild && (
           <ChevronDown
             className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
             aria-hidden="true"
           />
         )}
-      </button>
+      </Comp>
     );
   },
 );

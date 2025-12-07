@@ -155,8 +155,8 @@ export default function ComponentsPage() {
                       Toggle
                     </Button>
                     <Dropdown>
-                      <DropdownTrigger>
-                        <Button variant="ghost" size="sm">
+                      <DropdownTrigger asChild showChevron={false}>
+                        <Button variant="ghost" size="sm" iconOnly>
                           <Settings className="h-4 w-4" />
                         </Button>
                       </DropdownTrigger>
@@ -726,7 +726,7 @@ export default function ComponentsPage() {
         >
           <div className="flex flex-wrap gap-4">
             <Dropdown>
-              <DropdownTrigger>
+              <DropdownTrigger asChild>
                 <Button variant="outline" rightIcon={<Settings className="h-4 w-4" />}>
                   Actions
                 </Button>
@@ -759,7 +759,7 @@ export default function ComponentsPage() {
             </Dropdown>
 
             <Dropdown>
-              <DropdownTrigger>
+              <DropdownTrigger asChild>
                 <Button leftIcon={<User className="h-4 w-4" />}>Account</Button>
               </DropdownTrigger>
               <DropdownContent align="start">
