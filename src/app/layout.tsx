@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: for theme its fine */
 import { Geist, Geist_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui";
 import { ThemeProvider, themeScript } from "@/context";

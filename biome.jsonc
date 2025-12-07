@@ -32,7 +32,8 @@
         "useIterableCallbackReturn": "off" // Turned off due to false positives with certain array methods
       },
       "complexity": {
-        "noBannedTypes": "off" // Turned off to allow flexibility in type definitions
+        "noBannedTypes": "off", // Turned off to allow flexibility in type definitions
+        "noImportantStyles": "off"
       },
       "nursery": {
         "noDeprecatedImports": "error",
