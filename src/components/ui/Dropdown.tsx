@@ -27,26 +27,30 @@ export const dropdownVariants = tv({
   slots: {
     trigger: [
       "inline-flex items-center justify-between gap-2",
-      "rounded-md border bg-background px-3 py-2",
-      "text-sm font-medium transition-colors",
-      "hover:bg-accent hover:text-accent-foreground",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "rounded-md border border-border bg-background px-3 py-2",
+      "text-sm font-medium",
+      "transition-[border-color,box-shadow,background-color] duration-200 ease-out",
+      "hover:bg-accent/50 hover:border-accent",
+      "focus-visible:outline-none focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_oklch(from_var(--primary)_l_c_h_/_0.15)]",
+      "active:scale-[0.98]",
       "disabled:pointer-events-none disabled:opacity-50",
     ],
     content: [
       "absolute z-50 min-w-[8rem] overflow-hidden",
-      "rounded-md border bg-popover p-1 shadow-md",
+      "rounded-md border border-border bg-popover p-1",
+      "shadow-lg shadow-black/10 dark:shadow-black/30",
     ],
     item: [
       "relative flex cursor-pointer select-none items-center gap-2",
       "rounded-sm px-2 py-1.5 text-sm outline-none",
-      "transition-colors",
+      "transition-colors duration-150 ease-out",
       "hover:bg-accent hover:text-accent-foreground",
       "focus:bg-accent focus:text-accent-foreground",
+      "active:bg-accent/80",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
     ],
     separator: "my-1 h-px bg-border",
-    label: "px-2 py-1.5 text-sm font-semibold text-foreground",
+    label: "px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
   },
   variants: {
     align: {

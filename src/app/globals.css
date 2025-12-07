@@ -11,6 +11,12 @@
     --background: oklch(0.9383 0.0042 236.4993);
     --foreground: oklch(0.2 0.02 260);
 
+    /* === Focus Ring Colors (for box-shadow) === */
+    --primary-rgb: 217, 119, 87;
+    --destructive-rgb: 220, 60, 60;
+    --success-rgb: 60, 180, 100;
+    --warning-rgb: 220, 180, 50;
+
     /* === Secondary & Muted === */
     --secondary: oklch(0.85 0.015 260);
     --secondary-foreground: oklch(0.25 0.02 260);
@@ -79,6 +85,12 @@
     --primary-foreground: oklch(0.15 0.02 36);
     --background: oklch(0.18 0.025 262);
     --foreground: oklch(0.93 0.008 260);
+
+    /* === Focus Ring Colors (for box-shadow) === */
+    --primary-rgb: 230, 140, 110;
+    --destructive-rgb: 240, 80, 80;
+    --success-rgb: 80, 200, 120;
+    --warning-rgb: 240, 200, 70;
 
     /* === Secondary & Muted === */
     --secondary: oklch(0.28 0.02 262);
