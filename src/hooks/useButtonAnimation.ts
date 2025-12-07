@@ -183,13 +183,18 @@ export function useButtonAnimation<T extends HTMLElement = HTMLButtonElement>(
       switch (clickEffect) {
         case "ripple": {
           const rect = el.getBoundingClientRect();
+
+          // Use cursor position relative to the element so the ripple spawns at the click point
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+
           const size = Math.max(rect.width, rect.height) * 2;
           const ripple = document.createElement("span");
           ripple.className = "cc-ripple";
           ripple.style.width = `${size}px`;
           ripple.style.height = `${size}px`;
-          ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
-          ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
           el.appendChild(ripple);
           ripple.addEventListener("animationend", () => ripple.remove());
           break;
@@ -255,7 +260,8 @@ export function useButtonAnimation<T extends HTMLElement = HTMLButtonElement>(
   })();
 
   // Container classes for effects that need positioning
-  const containerClasses = clickEffect === "ripple" ? "relative overflow-hidden" : "";
+  const containerClasses =
+    clickEffect === "ripple" ? "cc-ripple-container relative overflow-hidden" : "";
 
   return {
     ref: elementRef,
