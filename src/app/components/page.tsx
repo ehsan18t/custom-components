@@ -405,16 +405,16 @@ export default function ComponentsPage() {
               </div>
             </DemoGroup>
 
-            <DemoGroup title="Sizes & Floating Label">
+            <DemoGroup title="Sizes & Variants">
               <div className="space-y-4">
                 <Input inputSize="sm" label="Small Input" placeholder="Small size" />
                 <Input inputSize="md" label="Medium Input" placeholder="Medium size (default)" />
                 <Input inputSize="lg" label="Large Input" placeholder="Large size" />
                 <Input
-                  label="Floating Label"
-                  floatingLabel
-                  placeholder="Focus to see the label float"
-                  helperText="Label moves above the input on focus"
+                  label="Ghost Variant"
+                  variant="ghost"
+                  placeholder="Ghost style input"
+                  helperText="Minimal styling until focused"
                 />
               </div>
             </DemoGroup>
@@ -426,7 +426,7 @@ export default function ComponentsPage() {
         {/* ================================================================ */}
         <Section
           title="Textarea"
-          description="Feature-rich textarea with auto-resize, character count, floating labels, and validation states."
+          description="Feature-rich textarea with auto-resize, character count, and validation states."
         >
           <div className="grid gap-8 lg:grid-cols-2">
             <DemoGroup title="Basic">

@@ -12,6 +12,7 @@ This project is a custom component collection for Next.js using TailwindCSS v4, 
 - Always complete all todo you have. don't stop and ask for confirmation.
 - Never run the dev server. Just assume its already running. if you need terminal output or any logs just use `next-devtools` mcp server to get them.
 - Always write type safe typescript code.
+- DON'T JUST MAKE ANOTHER SHADCN DESIGN. IF I WANTED THAT I WOULD JUST USE SHADCN. MAKE IT DIFFERENT AND UNIQUE.
 
 
 ---

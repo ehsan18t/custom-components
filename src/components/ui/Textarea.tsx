@@ -20,19 +20,34 @@ import { cn } from "@/lib/utils";
 
 export const textareaVariants = tv({
   base: [
-    "peer w-full bg-transparent px-3 py-2.5",
-    "text-sm text-foreground placeholder:text-muted-foreground/60",
+    "flex min-h-[100px] w-full rounded-lg border bg-background px-3 py-2.5",
+    "text-sm text-foreground placeholder:text-muted-foreground/50",
     "transition-all duration-200 ease-out",
     "focus:outline-none",
     "disabled:cursor-not-allowed disabled:opacity-50",
-    "resize-y min-h-[100px]",
   ],
   variants: {
     variant: {
-      default: "",
-      filled: "",
-      flushed: "px-0",
-      unstyled: "p-0",
+      default: [
+        "border-border/60 bg-background",
+        "hover:border-border",
+        "focus:border-primary focus:ring-2 focus:ring-primary/20",
+      ],
+      filled: [
+        "border-transparent bg-muted/50",
+        "hover:bg-muted/70",
+        "focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20",
+      ],
+      ghost: [
+        "border-transparent bg-transparent",
+        "hover:bg-muted/50",
+        "focus:bg-muted/30 focus:ring-2 focus:ring-primary/20",
+      ],
+      flushed: [
+        "rounded-none border-x-0 border-t-0 border-b-2 border-border/60 bg-transparent px-0",
+        "hover:border-border",
+        "focus:border-primary focus:ring-0",
+      ],
     },
     resize: {
       none: "resize-none",
@@ -40,85 +55,47 @@ export const textareaVariants = tv({
       horizontal: "resize-x",
       both: "resize",
     },
-  },
-  defaultVariants: {
-    variant: "default",
-    resize: "vertical",
-  },
-});
-
-// Container styles with Aceternity-inspired shadows (matching Input)
-const containerVariants = tv({
-  base: [
-    "group relative flex",
-    "rounded-lg border bg-background",
-    "transition-all duration-200 ease-out",
-    "shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]",
-    "dark:shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.3),0px_1px_0px_0px_rgba(0,0,0,0.1),0px_0px_0px_1px_rgba(255,255,255,0.06)]",
-    "has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed",
-  ],
-  variants: {
-    variant: {
-      default: [
-        "border-transparent",
-        "hover:shadow-[0px_3px_6px_-2px_rgba(0,0,0,0.12),0px_2px_4px_0px_rgba(25,28,33,0.04),0px_0px_0px_1px_rgba(25,28,33,0.12)]",
-        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--primary-rgb),0.2),0px_2px_4px_0px_rgba(var(--primary-rgb),0.1)]",
-        "focus-within:border-primary",
-      ],
-      filled: [
-        "border-transparent bg-muted/50",
-        "hover:bg-muted/70",
-        "focus-within:bg-background focus-within:border-primary",
-        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--primary-rgb),0.2)]",
-      ],
-      flushed: [
-        "rounded-none border-x-0 border-t-0 border-b-2 border-border bg-transparent shadow-none",
-        "hover:border-muted-foreground/50 hover:shadow-none",
-        "focus-within:border-primary focus-within:shadow-none",
-      ],
-      unstyled: "border-none bg-transparent shadow-none hover:shadow-none focus-within:shadow-none",
-    },
     state: {
       default: "",
       error: [
-        "border-destructive",
-        "shadow-[0px_0px_0px_1px_rgba(var(--destructive-rgb),0.3)]",
-        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--destructive-rgb),0.2)]",
+        "border-destructive/60",
+        "hover:border-destructive",
+        "focus:border-destructive focus:ring-destructive/20",
       ],
       success: [
-        "border-success",
-        "shadow-[0px_0px_0px_1px_rgba(var(--success-rgb),0.3)]",
-        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--success-rgb),0.2)]",
+        "border-success/60",
+        "hover:border-success",
+        "focus:border-success focus:ring-success/20",
       ],
       warning: [
-        "border-warning",
-        "shadow-[0px_0px_0px_1px_rgba(var(--warning-rgb),0.3)]",
-        "focus-within:shadow-[0px_0px_0px_2px_rgba(var(--warning-rgb),0.2)]",
+        "border-warning/60",
+        "hover:border-warning",
+        "focus:border-warning focus:ring-warning/20",
       ],
     },
   },
+  compoundVariants: [
+    // Flushed state styles
+    {
+      variant: "flushed",
+      state: "error",
+      className: "focus:ring-0",
+    },
+    {
+      variant: "flushed",
+      state: "success",
+      className: "focus:ring-0",
+    },
+    {
+      variant: "flushed",
+      state: "warning",
+      className: "focus:ring-0",
+    },
+  ],
   defaultVariants: {
     variant: "default",
+    resize: "vertical",
     state: "default",
-  },
-});
-
-// Floating label styles (matching Input)
-const labelVariants = tv({
-  base: [
-    "absolute pointer-events-none select-none",
-    "text-muted-foreground",
-    "transition-all duration-200 ease-out",
-    "origin-left",
-  ],
-  variants: {
-    isFloating: {
-      true: "-top-2.5 left-2 scale-75 bg-background px-1 text-xs",
-      false: "top-3 left-3 scale-100",
-    },
-  },
-  defaultVariants: {
-    isFloating: false,
   },
 });
 
@@ -137,8 +114,8 @@ export interface TextareaProps
   label?: string;
   /** Whether the field is required */
   required?: boolean;
-  /** Container className */
-  containerClassName?: string;
+  /** Wrapper className */
+  wrapperClassName?: string;
   /** Show character count */
   showCount?: boolean;
   /** Maximum character count */
@@ -149,8 +126,6 @@ export interface TextareaProps
   minRows?: number;
   /** Maximum rows when auto-resizing */
   maxRows?: number;
-  /** Use floating label style */
-  floatingLabel?: boolean;
   /** Validation state */
   state?: "default" | "error" | "success" | "warning";
   /** Full width */
@@ -167,7 +142,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
     {
       className,
-      containerClassName,
+      wrapperClassName,
       variant = "default",
       resize,
       error,
@@ -186,7 +161,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       autoResize = false,
       minRows = 3,
       maxRows = 10,
-      floatingLabel = false,
       state,
       fullWidth = true,
       animateOnError = true,
@@ -197,7 +171,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const [internalValue, setInternalValue] = useState(defaultValue ?? "");
     const [isFocused, setIsFocused] = useState(false);
     const internalRef = useRef<HTMLTextAreaElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
     const prevErrorRef = useRef<string | undefined>(error);
 
@@ -208,9 +182,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     // Derive state from error
     const derivedState = error ? "error" : state;
-
-    // Label should float when focused or has value
-    const isLabelFloated = isFocused || hasValue;
 
     // Auto-resize function
     const resizeTextarea = () => {
@@ -269,10 +240,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     // Shake animation on error
     useGSAP(
       () => {
-        if (!containerRef.current || !animateOnError) return;
+        if (!wrapperRef.current || !animateOnError) return;
 
         if (error && !prevErrorRef.current) {
-          gsap.to(containerRef.current, {
+          gsap.to(wrapperRef.current, {
             keyframes: [
               { x: -6, duration: 0.05 },
               { x: 6, duration: 0.05 },
@@ -293,120 +264,91 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const textareaId = id || props.name;
     const charCount = typeof currentValue === "string" ? currentValue.length : 0;
 
+    // Suppress unused variable warnings
+    void isFocused;
+    void hasValue;
+
     return (
-      <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full")}>
-        {/* Non-floating label */}
-        {label && !floatingLabel && (
+      <div
+        ref={wrapperRef}
+        className={cn("flex flex-col gap-1.5", fullWidth && "w-full", wrapperClassName)}
+      >
+        {/* Label */}
+        {label && (
           <label
             htmlFor={textareaId}
-            className={cn("font-medium text-foreground text-sm", disabled && "opacity-50")}
+            className={cn(
+              "font-medium text-foreground text-sm",
+              disabled && "cursor-not-allowed opacity-50",
+            )}
           >
             {label}
             {required && <span className="ml-1 text-destructive">*</span>}
           </label>
         )}
 
-        {/* Main textarea container */}
-        <div
-          ref={containerRef}
-          className={cn(containerVariants({ variant, state: derivedState }), containerClassName)}
-        >
-          {/* Textarea element */}
-          <textarea
-            ref={textareaRef}
-            id={textareaId}
-            disabled={disabled}
-            value={isControlled ? value : undefined}
-            defaultValue={!isControlled ? defaultValue : undefined}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            maxLength={maxLength}
-            placeholder={floatingLabel && label ? " " : props.placeholder}
-            className={cn(
-              textareaVariants({
-                variant,
-                resize: autoResize ? "none" : resize,
-              }),
-              className,
-            )}
-            aria-invalid={derivedState === "error"}
-            aria-describedby={
-              error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
-            }
-            {...props}
-          />
-
-          {/* Floating label */}
-          {floatingLabel && label && (
-            <label
-              htmlFor={textareaId}
-              className={cn(
-                labelVariants({ isFloating: isLabelFloated }),
-                isLabelFloated &&
-                  (derivedState === "error"
-                    ? "text-destructive"
-                    : derivedState === "success"
-                      ? "text-success"
-                      : derivedState === "warning"
-                        ? "text-warning"
-                        : "text-primary"),
-                disabled && "opacity-50",
-              )}
-            >
-              {label}
-              {required && <span className="ml-0.5 text-destructive">*</span>}
-            </label>
+        {/* Textarea element */}
+        <textarea
+          ref={textareaRef}
+          id={textareaId}
+          disabled={disabled}
+          value={isControlled ? value : undefined}
+          defaultValue={!isControlled ? defaultValue : undefined}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          maxLength={maxLength}
+          className={cn(
+            textareaVariants({
+              variant,
+              resize: autoResize ? "none" : resize,
+              state: derivedState,
+            }),
+            className,
           )}
-
-          {/* Animated underline for flushed variant */}
-          {variant === "flushed" && (
-            <span
-              className={cn(
-                "-translate-x-1/2 absolute bottom-0 left-1/2 h-0.5 w-0",
-                "bg-primary transition-all duration-300 ease-out",
-                isFocused && "w-full",
-                derivedState === "error" && "bg-destructive",
-                derivedState === "success" && "bg-success",
-              )}
-            />
-          )}
-        </div>
+          aria-invalid={derivedState === "error"}
+          aria-describedby={
+            error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
+          }
+          {...props}
+        />
 
         {/* Footer: Error/Helper text and character count */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            {error && (
-              <p
-                id={`${textareaId}-error`}
-                className="fade-in slide-in-from-top-1 animate-in text-destructive text-xs duration-200"
+        {(error || helperText || (showCount && maxLength)) && (
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              {error && (
+                <p
+                  id={`${textareaId}-error`}
+                  className="fade-in slide-in-from-top-1 animate-in text-destructive text-xs duration-200"
+                >
+                  {error}
+                </p>
+              )}
+              {!error && helperText && (
+                <p id={`${textareaId}-helper`} className="text-muted-foreground text-xs">
+                  {helperText}
+                </p>
+              )}
+            </div>
+
+            {/* Character count with color gradient */}
+            {showCount && maxLength && (
+              <span
+                className={cn(
+                  "text-xs tabular-nums transition-colors duration-200",
+                  charCount > maxLength * 0.9
+                    ? "text-destructive"
+                    : charCount > maxLength * 0.7
+                      ? "text-warning"
+                      : "text-muted-foreground",
+                )}
               >
-                {error}
-              </p>
-            )}
-            {!error && helperText && (
-              <p id={`${textareaId}-helper`} className="text-muted-foreground text-xs">
-                {helperText}
-              </p>
+                {charCount}/{maxLength}
+              </span>
             )}
           </div>
-
-          {/* Character count with color gradient */}
-          {showCount && maxLength && (
-            <span
-              className={cn(
-                "text-xs tabular-nums transition-colors duration-200",
-                charCount > maxLength * 0.9
-                  ? "text-destructive"
-                  : charCount > maxLength * 0.7
-                    ? "text-warning"
-                    : "text-muted-foreground",
-              )}
-            >
-              {charCount}/{maxLength}
-            </span>
-          )}
-        </div>
+        )}
       </div>
     );
   },
