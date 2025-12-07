@@ -7,6 +7,8 @@ This project is a custom component collection for Next.js using TailwindCSS v4, 
 - Ensure all components are tree-shakeable and optimized for performance.
 - Always use `bun` for package management and scripts.
 - Always commit after as task is done.
+- Always communicate with nextjs dev tool mcp server for continuous checks if anything is wrong.
+- NEVER get to the conclusion that its external issue and not your code. Always double check your code first.
 
 
 ---

@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: for theme its fine */
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { ToastProvider } from "@/components/ui";
 import { ThemeProvider, themeScript } from "@/context";
 import "./globals.css";
@@ -21,13 +21,16 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Prevent flash of wrong theme */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased transition-colors duration-300`}
       >
+        {/* Prevent flash of wrong theme - runs before React hydration */}
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: Required for theme script
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
         <ThemeProvider defaultTheme="system" enableSystem>
           <ToastProvider position="bottom-right" showProgress pauseOnHover>
             {children}
