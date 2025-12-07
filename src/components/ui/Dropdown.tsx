@@ -230,12 +230,27 @@ export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProp
       }
     };
 
-    const Comp = asChild ? Slot : "button";
+    // When using asChild, Slot requires exactly one child element
+    if (asChild) {
+      return (
+        <Slot
+          ref={mergedRef}
+          className={cn(styles.trigger(), className)}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          {...props}
+        >
+          {children}
+        </Slot>
+      );
+    }
 
     return (
-      <Comp
+      <button
         ref={mergedRef}
-        type={asChild ? undefined : "button"}
+        type="button"
         className={cn(styles.trigger(), className)}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -244,13 +259,13 @@ export const DropdownTrigger = forwardRef<HTMLButtonElement, DropdownTriggerProp
         {...props}
       >
         {children}
-        {showChevron && !asChild && (
+        {showChevron && (
           <ChevronDown
             className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
             aria-hidden="true"
           />
         )}
-      </Comp>
+      </button>
     );
   },
 );

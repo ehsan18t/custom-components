@@ -155,7 +155,11 @@ export default function ComponentsPage() {
                       Toggle
                     </Button>
                     <Dropdown>
-                      <DropdownTrigger asChild showChevron={false}>
+                      <DropdownTrigger
+                        className="flex items-center justify-center"
+                        asChild
+                        showChevron={false}
+                      >
                         <Button variant="ghost" size="sm" iconOnly>
                           <Settings className="h-4 w-4" />
                         </Button>
@@ -287,7 +291,7 @@ export default function ComponentsPage() {
             <div className="flex flex-wrap gap-3">
               <Button rounded="none">Square</Button>
               <Button rounded="sm">Small Radius</Button>
-              <Button rounded="md">Medium Radius</Button>
+              <Button>Medium Radius</Button>
               <Button rounded="lg">Large Radius</Button>
               <Button rounded="full">Pill Shape</Button>
             </div>
